@@ -40,13 +40,14 @@ public class LzoCodec extends com.hadoop.compression.lzo.LzoCodec {
 
   static final String oahLzoCodec = LzoCodec.class.getName();
   static final String chclLzoCodec =
-      com.hadoop.compression.lzo.LzoCodec.class.getName();
+    com.hadoop.compression.lzo.LzoCodec.class.getName();
   static boolean warned = false;
-  
+
   static {
     LOG.info("Bridging " + oahLzoCodec + " to " + chclLzoCodec + ".");
   }
-  
+
+  @Override
   public CompressionOutputStream createOutputStream(OutputStream out,
       Compressor compressor) throws IOException {
     if (!warned) {

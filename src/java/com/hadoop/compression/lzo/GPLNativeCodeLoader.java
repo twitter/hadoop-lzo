@@ -24,7 +24,7 @@ public class GPLNativeCodeLoader {
 
   private static final Log LOG = LogFactory.getLog(GPLNativeCodeLoader.class);
   private static boolean nativeLibraryLoaded = false;
-  
+
   static {
     try {
       //try to load the lib
@@ -36,7 +36,7 @@ public class GPLNativeCodeLoader {
       nativeLibraryLoaded = false;
     }
   }
-  
+
   /**
    * Are the native gpl libraries loaded? 
    * @return true if loaded, otherwise false

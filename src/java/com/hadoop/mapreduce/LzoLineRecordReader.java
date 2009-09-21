@@ -44,13 +44,14 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
   private long end;
   private LineReader in;
   private FSDataInputStream fileIn;
-  
-  private LongWritable key = new LongWritable();
-  private Text value = new Text();
+
+  private final LongWritable key = new LongWritable();
+  private final Text value = new Text();
 
   /**
    * Get the progress within the split.
    */
+  @Override
   public float getProgress() {
     if (start == end) {
       return 0.0f;
@@ -63,6 +64,7 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     return pos;
   }
 
+  @Override
   public synchronized void close() throws IOException {
     if (in != null) {
       in.close();
@@ -86,7 +88,7 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     end = start + split.getLength();
     final Path file = split.getPath();
     Configuration job = context.getConfiguration();
-    
+
     FileSystem fs = file.getFileSystem(job);
     CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
     final CompressionCodec codec = compressionCodecs.getCodec(file);

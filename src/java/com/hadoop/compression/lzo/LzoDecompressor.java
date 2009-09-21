@@ -38,7 +38,7 @@ class LzoDecompressor implements Decompressor {
   // HACK - Use this as a global lock in the JNI layer
   @SuppressWarnings({ "unchecked", "unused" })
   private static Class clazz = LzoDecompressor.class;
-  
+
   private int directBufferSize;
   private Buffer compressedDirectBuf = null;
   private int compressedDirectBufLen;
@@ -46,15 +46,15 @@ class LzoDecompressor implements Decompressor {
   private byte[] userBuf = null;
   private int userBufOff = 0, userBufLen = 0;
   private boolean finished;
-  
+
   // Whether or not the current block being is actually stored uncompressed.
   // This happens when compressing a block would increase it size.
   private boolean isCurrentBlockUncompressed;
-  
+
   private CompressionStrategy strategy;
   @SuppressWarnings("unused")
   private long lzoDecompressor = 0;   // The actual lzo decompression function.
-  
+
   public static enum CompressionStrategy {
     /**
      * lzo1 algorithms.
@@ -87,7 +87,7 @@ class LzoDecompressor implements Decompressor {
     LZO1F_SAFE (9),
     LZO1F_ASM_FAST (10),
     LZO1F_ASM_FAST_SAFE (11),
-    
+
     /**
      * lzo1x algorithms.
      */
@@ -97,7 +97,7 @@ class LzoDecompressor implements Decompressor {
     LZO1X_ASM_SAFE (15),
     LZO1X_ASM_FAST (16),
     LZO1X_ASM_FAST_SAFE (17),
-    
+
     /**
      * lzo1y algorithms.
      */
@@ -107,33 +107,33 @@ class LzoDecompressor implements Decompressor {
     LZO1Y_ASM_SAFE (21),
     LZO1Y_ASM_FAST (22),
     LZO1Y_ASM_FAST_SAFE (23),
-    
+
     /**
      * lzo1z algorithms.
      */
     LZO1Z (24),
     LZO1Z_SAFE (25),
-    
+
     /**
      * lzo2a algorithms.
      */
     LZO2A (26),
     LZO2A_SAFE (27);
-    
+
     private final int decompressor;
 
     private CompressionStrategy(int decompressor) {
       this.decompressor = decompressor;
     }
-    
+
     int getDecompressor() {
       return decompressor;
     }
   }; // CompressionStrategy
-  
+
   private static boolean nativeLzoLoaded;
   public static final int LZO_LIBRARY_VERSION;
-  
+
   static {
     if (GPLNativeCodeLoader.isNativeCodeLoaded()) {
       // Initialize the native library
@@ -146,15 +146,15 @@ class LzoDecompressor implements Decompressor {
         nativeLzoLoaded = false;
       }
       LZO_LIBRARY_VERSION = (nativeLzoLoaded) ? 0xFFFF & getLzoLibraryVersion()
-                                              : -1;
+          : -1;
     } else {
       LOG.error("Cannot load " + LzoDecompressor.class.getName() + 
-                " without native-hadoop library!");
+      " without native-hadoop library!");
       nativeLzoLoaded = false;
       LZO_LIBRARY_VERSION = -1;
-     }
-   }
-  
+    }
+  }
+
   /**
    * Check if lzo decompressors are loaded and initialized.
    * 
@@ -174,17 +174,17 @@ class LzoDecompressor implements Decompressor {
   public LzoDecompressor(CompressionStrategy strategy, int directBufferSize) {
     this.directBufferSize = directBufferSize;
     this.strategy = strategy;
-    
+
     compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     uncompressedDirectBuf.position(directBufferSize);
-    
+
     /**
      * Initialize {@link #lzoDecompress}
      */
     init(this.strategy.getDecompressor());
   }
-  
+
   /**
    * Creates a new lzo decompressor.
    */
@@ -199,18 +199,18 @@ class LzoDecompressor implements Decompressor {
     if (off < 0 || len < 0 || off > b.length - len) {
       throw new ArrayIndexOutOfBoundsException();
     }
-  
+
     this.userBuf = b;
     this.userBufOff = off;
     this.userBufLen = len;
-    
+
     setInputFromSavedData();
-    
+
     // Reinitialize lzo's output direct-buffer 
     uncompressedDirectBuf.limit(directBufferSize);
     uncompressedDirectBuf.position(directBufferSize);
   }
-  
+
   synchronized void setInputFromSavedData() {
     compressedDirectBufLen = userBufLen;
     if (compressedDirectBufLen > directBufferSize) {
@@ -223,8 +223,8 @@ class LzoDecompressor implements Decompressor {
       // Reinitialize lzo's input direct-buffer
       compressedDirectBuf.rewind();
       ((ByteBuffer)compressedDirectBuf).put(userBuf, userBufOff, 
-                                          compressedDirectBufLen);
-      
+          compressedDirectBufLen);
+
       // Note how much data is being fed to lzo
       userBufOff += compressedDirectBufLen;
       userBufLen -= compressedDirectBufLen;
@@ -240,7 +240,7 @@ class LzoDecompressor implements Decompressor {
     if (uncompressedDirectBuf.remaining() > 0) {
       return false;
     }
-    
+
     // Check if lzo has consumed all input
     if (compressedDirectBufLen <= 0) {
       // Check if we have consumed all user-input
@@ -250,7 +250,7 @@ class LzoDecompressor implements Decompressor {
         setInputFromSavedData();
       }
     }
-    
+
     return false;
   }
 
@@ -265,14 +265,14 @@ class LzoDecompressor implements Decompressor {
   }
 
   public synchronized int decompress(byte[] b, int off, int len) 
-    throws IOException {
+  throws IOException {
     if (b == null) {
       throw new NullPointerException();
     }
     if (off < 0 || len < 0 || off > b.length - len) {
       throw new ArrayIndexOutOfBoundsException();
     }
-    
+
     int numBytes = 0;
     if (isCurrentBlockUncompressed()) {
       // The current block has been stored uncompressed, so just
@@ -281,7 +281,7 @@ class LzoDecompressor implements Decompressor {
       System.arraycopy(userBuf, userBufOff, b, off, numBytes);
       userBufOff += numBytes;
       userBufLen -= numBytes;
-    } else {
+    } else {    
       // Check if there is uncompressed data
       numBytes = uncompressedDirectBuf.remaining();
       if (numBytes > 0) {
@@ -289,12 +289,12 @@ class LzoDecompressor implements Decompressor {
         ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
         return numBytes;
       }
-  
+
       // Check if there is data to decompress
       if (compressedDirectBufLen <= 0) {
         return 0;
       }
-  
+
       // Re-initialize the lzo's output direct-buffer
       uncompressedDirectBuf.rewind();
       uncompressedDirectBuf.limit(directBufferSize);
@@ -302,20 +302,20 @@ class LzoDecompressor implements Decompressor {
       // Decompress data
       numBytes = decompressBytesDirect(strategy.getDecompressor());
       uncompressedDirectBuf.limit(numBytes);
-  
+
       // Return atmost 'len' bytes
       numBytes = Math.min(numBytes, len);
-      ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes); 
+      ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
     }
-    
+
     // Set 'finished' if lzo has consumed all user-data
     if (userBufLen <= 0) {
       finished = true;
     }
-    
+
     return numBytes;
   }
-  
+
   public synchronized void reset() {
     finished = false;
     compressedDirectBufLen = 0;
@@ -332,7 +332,7 @@ class LzoDecompressor implements Decompressor {
   protected void finalize() {
     end();
   }
-  
+
   /**
    * Note whether the current block being decompressed is actually
    * stored as uncompressed data.  If it is, there is no need to 
@@ -355,7 +355,7 @@ class LzoDecompressor implements Decompressor {
   protected synchronized boolean isCurrentBlockUncompressed() {
     return isCurrentBlockUncompressed;
   }
-  
+
   private native static void initIDs();
   private native static int getLzoLibraryVersion();
   private native void init(int decompressor);

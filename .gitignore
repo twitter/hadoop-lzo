@@ -19,3 +19,4 @@
 .settings
 .svn
 build/
+bin/

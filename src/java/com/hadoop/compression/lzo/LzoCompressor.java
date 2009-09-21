@@ -38,7 +38,7 @@ class LzoCompressor implements Compressor {
   // HACK - Use this as a global lock in the JNI layer
   @SuppressWarnings({ "unchecked", "unused" })
   private static Class clazz = LzoDecompressor.class;
-  
+
   private int directBufferSize;
   private byte[] userBuf = null;
   private int userBufOff = 0, userBufLen = 0;
@@ -46,7 +46,7 @@ class LzoCompressor implements Compressor {
   private int uncompressedDirectBufLen = 0;
   private Buffer compressedDirectBuf = null;
   private boolean finish, finished;
-  
+
   private long bytesread = 0L;
   private long byteswritten = 0L;
 
@@ -56,7 +56,7 @@ class LzoCompressor implements Compressor {
   private int workingMemoryBufLen = 0;  // The length of 'working memory' buf.
   @SuppressWarnings("unused")
   private Buffer workingMemoryBuf;      // The 'working memory' for lzo.
-  
+
   /**
    * The compression algorithm for lzo library.
    */
@@ -66,13 +66,13 @@ class LzoCompressor implements Compressor {
      */
     LZO1 (0),
     LZO1_99 (1),
-    
+
     /**
      * lzo1a algorithms.
      */
     LZO1A (2),
     LZO1A_99 (3),
-    
+
     /**
      * lzo1b algorithms.
      */
@@ -108,13 +108,13 @@ class LzoCompressor implements Compressor {
     LZO1C_9 (29),
     LZO1C_99 (30),
     LZO1C_999 (31),
-    
+
     /**
      * lzo1f algorithms.
      */
     LZO1F_1 (32),
     LZO1F_999 (33),
-    
+
     /**
      * lzo1x algorithms.
      */
@@ -123,29 +123,29 @@ class LzoCompressor implements Compressor {
     LZO1X_12 (36),
     LZO1X_15 (37),
     LZO1X_999 (38),
-    
+
     /**
      * lzo1y algorithms.
      */
     LZO1Y_1 (39),
     LZO1Y_999 (40),
-    
+
     /**
      * lzo1z algorithms.
      */
     LZO1Z_999 (41),
-    
+
     /**
      * lzo2a algorithms.
      */
     LZO2A_999 (42);
-    
+
     private final int compressor;
 
     private CompressionStrategy(int compressor) {
       this.compressor = compressor;
     }
-    
+
     int getCompressor() {
       return compressor;
     }
@@ -153,7 +153,7 @@ class LzoCompressor implements Compressor {
 
   private static boolean nativeLzoLoaded;
   public static final int LZO_LIBRARY_VERSION;
-  
+
   static {
     if (GPLNativeCodeLoader.isNativeCodeLoaded()) {
       // Initialize the native library
@@ -166,15 +166,15 @@ class LzoCompressor implements Compressor {
         nativeLzoLoaded = false;
       }
       LZO_LIBRARY_VERSION = (nativeLzoLoaded) ? 0xFFFF & getLzoLibraryVersion()
-                                              : -1;
+          : -1;
     } else {
       LOG.error("Cannot load " + LzoCompressor.class.getName() + 
-                " without native-hadoop library!");
+      " without native-hadoop library!");
       nativeLzoLoaded = false;
       LZO_LIBRARY_VERSION = -1;
-     }
-   }
-  
+    }
+  }
+
   /**
    * Check if lzo compressors are loaded and initialized.
    * 
@@ -197,21 +197,21 @@ class LzoCompressor implements Compressor {
     uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     compressedDirectBuf.position(directBufferSize);
-    
+
     /**
      * Initialize {@link #lzoCompress} and {@link #workingMemoryBufLen}
      */
     init(this.strategy.getCompressor());
     workingMemoryBuf = ByteBuffer.allocateDirect(workingMemoryBufLen);
   }
-  
+
   /**
    * Creates a new compressor with the default lzo1x_1 compression.
    */
   public LzoCompressor() {
     this(CompressionStrategy.LZO1X_1, 64*1024);
   }
-  
+
   public synchronized void setInput(byte[] b, int off, int len) {
     if (b== null) {
       throw new NullPointerException();
@@ -246,7 +246,7 @@ class LzoCompressor implements Compressor {
 
     uncompressedDirectBufLen = Math.min(userBufLen, directBufferSize);
     ((ByteBuffer)uncompressedDirectBuf).put(userBuf, userBufOff,
-      uncompressedDirectBufLen);
+        uncompressedDirectBufLen);
 
     // Note how much data is being fed to lzo
     userBufOff += uncompressedDirectBufLen;
@@ -267,7 +267,7 @@ class LzoCompressor implements Compressor {
   public synchronized void finish() {
     finish = true;
   }
-  
+
   public synchronized boolean finished() {
     // Check if 'lzo' says its 'finished' and
     // all compressed data has been consumed
@@ -275,7 +275,7 @@ class LzoCompressor implements Compressor {
   }
 
   public synchronized int compress(byte[] b, int off, int len) 
-    throws IOException {
+  throws IOException {
     if (b == null) {
       throw new NullPointerException();
     }
@@ -354,7 +354,7 @@ class LzoCompressor implements Compressor {
   public synchronized void end() {
     // nop
   }
-  
+
   private native static void initIDs();
   private native static int getLzoLibraryVersion();
   private native void init(int compressor);

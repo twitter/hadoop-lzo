@@ -70,7 +70,7 @@ public final class QuickLZ {
     byte[] d2;
     int fetch = 0;
     int last_matchstart = (source.length - UNCONDITIONAL_MATCHLEN - 
-                           UNCOMPRESSED_END - 1);
+        UNCOMPRESSED_END - 1);
 
     if(source.length == 0)
       return new byte[0];
@@ -120,8 +120,8 @@ public final class QuickLZ {
         {
           int old_src = src;
           int remaining = ((source.length - UNCOMPRESSED_END - src + 1 - 1)>255 
-                           ? 255 
-                           : (source.length - UNCOMPRESSED_END - src + 1 - 1));
+              ? 255 
+                  : (source.length - UNCOMPRESSED_END - src + 1 - 1));
 
           src += 4;
           if (source[o + src - old_src] == source[src])
@@ -131,7 +131,7 @@ public final class QuickLZ {
             {
               src++;
               while (source[o + (src - old_src)] == source[src] && 
-                     (src - old_src) < remaining)
+                  (src - old_src) < remaining)
                 src++;
             }
           }
@@ -164,7 +164,7 @@ public final class QuickLZ {
         src++;
         dst++;
         fetch = ((fetch >>> 8) & 0xffff) | 
-                ((((int)source[src + 2]) & 0xff) << 16);
+        ((((int)source[src + 2]) & 0xff) << 16);
       }
     }
 
@@ -173,7 +173,7 @@ public final class QuickLZ {
       if ((cword_val & 1) == 1)
       {
         fastwrite(destination, cword_ptr, 
-                  (long)((cword_val >>> 1) | 0x80000000L), 4);
+            (long)((cword_val >>> 1) | 0x80000000L), 4);
         cword_ptr = dst;
         dst += CWORD_LEN;
         cword_val = 0x80000000L;
@@ -189,7 +189,7 @@ public final class QuickLZ {
       cword_val = (cword_val >>> 1);
     }
     fastwrite(destination, cword_ptr, (long)((cword_val >>> 1) | 0x80000000L), 
-              CWORD_LEN);
+        CWORD_LEN);
     destination[0] = 2 | 1;
     fastwrite(destination, 1, (long)dst, 4);
     fastwrite(destination, 5, (long)source.length, 4);
@@ -320,7 +320,7 @@ public final class QuickLZ {
         hashtable[hash] = last_hashed;
         hash_counter[hash] = 1;
         fetch = fetch >>> 8 & 0xffff | 
-                (((int)destination[last_hashed + 3]) & 0xff) << 16;
+        (((int)destination[last_hashed + 3]) & 0xff) << 16;
       }
       last_hashed = dst - 1;
       fetch = (int)fastread(source, src, 3);

@@ -37,12 +37,12 @@ public class TestLzopInputStream extends TestCase {
   private static final Log LOG = LogFactory.getLog(TestLzopInputStream.class);
 
   private String inputDataPath;
-  
+
   // Filenames of various sizes to read in and verify.
   private final String bigFile = "100000.txt";
   private final String mediumFile = "1000.txt";
   private final String smallFile = "100.txt";
-  
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -53,7 +53,7 @@ public class TestLzopInputStream extends TestCase {
    * Test against a 100,000 line file with multiple LZO blocks.
    */
   public void testBigFile() throws NoSuchAlgorithmException, IOException,
-      InterruptedException {    
+  InterruptedException {    
     runTest(bigFile);
   }
 
@@ -61,7 +61,7 @@ public class TestLzopInputStream extends TestCase {
    * Test against a 1,000 line file with a single LZO block.
    */
   public void testMediumFile() throws NoSuchAlgorithmException, IOException,
-      InterruptedException {    
+  InterruptedException {    
     runTest(mediumFile);
   }
 
@@ -76,7 +76,7 @@ public class TestLzopInputStream extends TestCase {
    * with no additional checksum.  Thus the read has to follow a slightly different codepath.
    */
   public void testSmallFile() throws NoSuchAlgorithmException, IOException,
-      InterruptedException {    
+  InterruptedException {    
     runTest(smallFile);
   }
 
@@ -86,26 +86,26 @@ public class TestLzopInputStream extends TestCase {
    * line by line and comparing.
    */
   private void runTest(String filename) throws IOException,
-      NoSuchAlgorithmException, InterruptedException {
-    
+  NoSuchAlgorithmException, InterruptedException {
+
     if (!GPLNativeCodeLoader.isNativeCodeLoaded()) {
       LOG.warn("Cannot run this test without the native lzo libraries");
       return;
     }
-    
+
     // Assumes the flat file is at filename, and the compressed version is filename.lzo
     File textFile = new File(inputDataPath, filename);
     File lzoFile = new File(inputDataPath, filename + new LzopCodec().getDefaultExtension());
     LOG.info("Comparing files " + textFile + " and " + lzoFile);
-    
+
     // Set up the text file reader.
     BufferedReader textBr = new BufferedReader(new InputStreamReader(new FileInputStream(textFile.getAbsolutePath())));
     // Set up the LZO reader.
     int lzoBufferSize = 256 * 1024;
-    LzopCodec.LzopDecompressor lzoDecompressor = new LzopCodec.LzopDecompressor(lzoBufferSize);
-    LzopCodec.LzopInputStream lzoIn = new LzopCodec.LzopInputStream(new FileInputStream(lzoFile.getAbsolutePath()), lzoDecompressor, lzoBufferSize);
+    LzopDecompressor lzoDecompressor = new LzopDecompressor(lzoBufferSize);
+    LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoFile.getAbsolutePath()), lzoDecompressor, lzoBufferSize);
     BufferedReader lzoBr = new BufferedReader(new InputStreamReader(lzoIn));
-    
+
     // Now read line by line and compare.
     String textLine;
     String lzoLine;

@@ -44,8 +44,8 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import com.hadoop.compression.lzo.GPLNativeCodeLoader;
+import com.hadoop.compression.lzo.LzoIndex;
 import com.hadoop.compression.lzo.LzopCodec;
-import com.hadoop.mapreduce.LzoTextInputFormat.LzoIndex;
 
 /**
  * Test the LzoTextInputFormat, make sure it splits the file properly and
@@ -57,7 +57,7 @@ public class TestLzoTextInputFormat extends TestCase {
       .getName());
 
   private MessageDigest md5;
-  private String lzoFileName = "part-r-00001" + new LzopCodec().getDefaultExtension();
+  private final String lzoFileName = "part-r-00001" + new LzopCodec().getDefaultExtension();
   private Path outputDir;
   
   //test both bigger outputs and small one chunk ones
@@ -91,6 +91,13 @@ public class TestLzoTextInputFormat extends TestCase {
     assertEquals(15, index.findNextPosition(11));
     assertEquals(15, index.findNextPosition(15));
     assertEquals(-1, index.findNextPosition(16));
+    
+    assertEquals(5, index.alignSliceStartToIndex(3, 20));
+    assertEquals(15, index.alignSliceStartToIndex(15, 20));
+    assertEquals(10, index.alignSliceEndToIndex(8, 30));
+    assertEquals(10, index.alignSliceEndToIndex(10, 30));
+    assertEquals(30, index.alignSliceEndToIndex(17, 30));
+    assertEquals(LzoIndex.NOT_FOUND, index.alignSliceStartToIndex(16, 20));
   }
 
   /**
@@ -161,7 +168,7 @@ public class TestLzoTextInputFormat extends TestCase {
    
     if (testWithIndex) {
       Path lzoFile = new Path(outputDir, lzoFileName);
-      LzoTextInputFormat.createIndex(localFs, lzoFile);
+      LzoIndex.createIndex(localFs, lzoFile);
     }
 
     LzoTextInputFormat inputFormat = new LzoTextInputFormat();
