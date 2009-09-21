@@ -58,6 +58,7 @@
 
   <property name="test.src.dir" value="${basedir}/src/test"/>
   <property name="test.build.dir" value="${build.dir}/test"/>
+  <property name="test.input.data" value="${test.src.dir}/data"/>
   <property name="test.generated.dir" value="${test.build.dir}/src"/>
   <property name="test.build.data" value="${test.build.dir}/data"/>
   <property name="test.log.dir" value="${test.build.dir}/logs"/>
@@ -283,6 +284,9 @@
 
     <delete dir="${test.build.data}"/>
     <mkdir dir="${test.build.data}"/>
+    <copy todir="${test.build.data}">
+      <fileset dir="${test.input.data}"/>
+    </copy>
     <delete dir="${test.log.dir}"/>
     <mkdir dir="${test.log.dir}"/>
     <junit showoutput="${test.output}"

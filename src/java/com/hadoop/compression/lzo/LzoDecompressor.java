@@ -47,6 +47,10 @@ class LzoDecompressor implements Decompressor {
   private int userBufOff = 0, userBufLen = 0;
   private boolean finished;
   
+  // Whether or not the current block being is actually stored uncompressed.
+  // This happens when compressing a block would increase it size.
+  private boolean isCurrentBlockUncompressed;
+  
   private CompressionStrategy strategy;
   @SuppressWarnings("unused")
   private long lzoDecompressor = 0;   // The actual lzo decompression function.
@@ -213,14 +217,18 @@ class LzoDecompressor implements Decompressor {
       compressedDirectBufLen = directBufferSize;
     }
 
-    // Reinitialize lzo's input direct-buffer
-    compressedDirectBuf.rewind();
-    ((ByteBuffer)compressedDirectBuf).put(userBuf, userBufOff, 
+    // If the current block is stored uncompressed, no need
+    // to ready all the lzo machinery, because it will be bypassed.
+    if (!isCurrentBlockUncompressed()) {
+      // Reinitialize lzo's input direct-buffer
+      compressedDirectBuf.rewind();
+      ((ByteBuffer)compressedDirectBuf).put(userBuf, userBufOff, 
                                           compressedDirectBufLen);
-    
-    // Note how much data is being fed to lzo
-    userBufOff += compressedDirectBufLen;
-    userBufLen -= compressedDirectBufLen;
+      
+      // Note how much data is being fed to lzo
+      userBufOff += compressedDirectBufLen;
+      userBufLen -= compressedDirectBufLen;
+    }
   }
 
   public synchronized void setDictionary(byte[] b, int off, int len) {
@@ -265,39 +273,47 @@ class LzoDecompressor implements Decompressor {
       throw new ArrayIndexOutOfBoundsException();
     }
     
-    int n = 0;
-    
-    // Check if there is uncompressed data
-    n = uncompressedDirectBuf.remaining();
-    if (n > 0) {
-      n = Math.min(n, len);
-      ((ByteBuffer)uncompressedDirectBuf).get(b, off, n);
-      return n;
+    int numBytes = 0;
+    if (isCurrentBlockUncompressed()) {
+      // The current block has been stored uncompressed, so just
+      // copy directly from the input buffer.
+      numBytes = Math.min(userBufLen, len);
+      System.arraycopy(userBuf, userBufOff, b, off, numBytes);
+      userBufOff += numBytes;
+      userBufLen -= numBytes;
+    } else {
+      // Check if there is uncompressed data
+      numBytes = uncompressedDirectBuf.remaining();
+      if (numBytes > 0) {
+        numBytes = Math.min(numBytes, len);
+        ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
+        return numBytes;
+      }
+  
+      // Check if there is data to decompress
+      if (compressedDirectBufLen <= 0) {
+        return 0;
+      }
+  
+      // Re-initialize the lzo's output direct-buffer
+      uncompressedDirectBuf.rewind();
+      uncompressedDirectBuf.limit(directBufferSize);
+
+      // Decompress data
+      numBytes = decompressBytesDirect(strategy.getDecompressor());
+      uncompressedDirectBuf.limit(numBytes);
+  
+      // Return atmost 'len' bytes
+      numBytes = Math.min(numBytes, len);
+      ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes); 
     }
     
-    // Check if there is data to decompress
-    if (compressedDirectBufLen <= 0) {
-      return 0;
-    }
-    
-    // Re-initialize the lzo's output direct-buffer
-    uncompressedDirectBuf.rewind();
-    uncompressedDirectBuf.limit(directBufferSize);
-
-    // Decompress data
-    n = decompressBytesDirect(strategy.getDecompressor());
-    uncompressedDirectBuf.limit(n);
-
     // Set 'finished' if lzo has consumed all user-data
     if (userBufLen <= 0) {
       finished = true;
     }
     
-    // Return atmost 'len' bytes
-    n = Math.min(n, len);
-    ((ByteBuffer)uncompressedDirectBuf).get(b, off, n);
-
-    return n;
+    return numBytes;
   }
   
   public synchronized void reset() {
@@ -312,8 +328,32 @@ class LzoDecompressor implements Decompressor {
     // nop
   }
 
+  @Override
   protected void finalize() {
     end();
+  }
+  
+  /**
+   * Note whether the current block being decompressed is actually
+   * stored as uncompressed data.  If it is, there is no need to 
+   * use the lzo decompressor, and no need to update compressed
+   * checksums.
+   * 
+   * @param uncompressed
+   *          Whether the current block of data is uncompressed already.
+   */
+  public synchronized void setCurrentBlockUncompressed(boolean uncompressed) {
+    isCurrentBlockUncompressed = uncompressed;
+  }
+
+  /**
+   * Query the compression status of the current block as it exists
+   * in the file.
+   * 
+   * @return true if the current block of data was stored as uncompressed.
+   */
+  protected synchronized boolean isCurrentBlockUncompressed() {
+    return isCurrentBlockUncompressed;
   }
   
   private native static void initIDs();

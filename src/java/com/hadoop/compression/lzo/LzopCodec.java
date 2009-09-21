@@ -209,6 +209,9 @@ public class LzopCodec extends LzoCodec {
       = new EnumMap<DChecksum,Integer>(DChecksum.class);
     private EnumMap<CChecksum,Integer> ccheck
       = new EnumMap<CChecksum,Integer>(CChecksum.class);
+      
+    private int noUncompressedBytes = 0;
+    private int uncompressedBlockSize = 0;
 
     public LzopInputStream(InputStream in, Decompressor decompressor,
         int bufferSize) throws IOException {
@@ -366,47 +369,89 @@ public class LzopCodec extends LzoCodec {
       }
     }
 
+    @Override
+    protected int decompress(byte[] b, int off, int len) throws IOException {
+      // Check if we are the beginning of a block
+      if (noUncompressedBytes == uncompressedBlockSize) {
+        // Get original data size
+        try {
+          byte[] tempBuf = new byte[4];
+          uncompressedBlockSize =  readInt(in, tempBuf, 4);
+        } catch (IOException ioe) {
+          return -1;
+        }
+        noUncompressedBytes = 0;
+      }
+
+      int n = 0;
+      while ((n = decompressor.decompress(b, off, len)) == 0) {
+        if (decompressor.finished() || decompressor.needsDictionary()) {
+          if (noUncompressedBytes >= uncompressedBlockSize) {
+            eof = true;
+            return -1;
+          }
+        }
+        if (decompressor.needsInput()) {
+          getCompressedData();
+        }
+      }
+
+      // Note the no. of decompressed bytes read from 'current' block
+      noUncompressedBytes += n;
+
+      return n;
+    }
+    
     /**
      * Read checksums and feed compressed block data into decompressor.
      */
+    @Override
     protected void getCompressedData() throws IOException {
       checkStream();
 
       LzopDecompressor ldecompressor = (LzopDecompressor)decompressor;
 
       // Get the size of the compressed chunk
-      int len = readInt(in, buf, 4);
-
+      int compressedLen = readInt(in, buf, 4);
+      
+      // If the lzo compressor compresses a block of data, and that compression
+      // actually makes the block larger, it writes the block as uncompressed instead.
+      // In this case, the compressed size and the uncompressed size in the header
+      // are identical, and there is NO compressed checksum written.
+      boolean blockIsUncompressed = (compressedLen >= uncompressedBlockSize);
+      
       verifyChecksums();
 
       for (DChecksum chk : dcheck.keySet()) {
         dcheck.put(chk, readInt(in, buf, 4));
       }
-      for (CChecksum chk : ccheck.keySet()) {
-        // NOTE: if the compressed size is not less than the uncompressed
-        //       size, this value is not present and decompression will fail.
-        //       Fortunately, checksums on compressed data are rare, as is
-        //       this case.
-        ccheck.put(chk, readInt(in, buf, 4));
+      if (!blockIsUncompressed) {
+        // If the current block is uncompressed, there was no compressed
+        // checksum and no compressed data, so nothing to update.
+        for (CChecksum chk : ccheck.keySet()) {
+          ccheck.put(chk, readInt(in, buf, 4));
+        }
       }
 
       ldecompressor.resetChecksum();
 
       // Read len bytes from underlying stream
-      if (len > buffer.length) {
-        buffer = new byte[len];
+      if (compressedLen > buffer.length) {
+        buffer = new byte[compressedLen];
       }
       int n = 0, off = 0;
-      while (n < len) {
-        int count = in.read(buffer, off + n, len - n);
+      while (n < compressedLen) {
+        int count = in.read(buffer, off + n, compressedLen - n);
         if (count < 0) {
           throw new EOFException();
         }
         n += count;
       }
 
+      // Note to the compressor that the current block is not compressed.
+      ldecompressor.setCurrentBlockUncompressed(blockIsUncompressed);
       // Send the read data to the decompressor
-      decompressor.setInput(buffer, 0, len);
+      decompressor.setInput(buffer, 0, compressedLen);
     }
 
     public void close() throws IOException {
@@ -483,7 +528,11 @@ public class LzopCodec extends LzoCodec {
     }
 
     public synchronized void setInput(byte[] b, int off, int len) {
-      for (Checksum chk : chkCMap.values()) chk.update(b, off, len);
+      if (!isCurrentBlockUncompressed()) {
+        // If the current block is uncompressed, there was no compressed
+        // checksum and no compressed data, so nothing to update.
+        for (Checksum chk : chkCMap.values()) chk.update(b, off, len);
+      }
       super.setInput(b, off, len);
     }
 
