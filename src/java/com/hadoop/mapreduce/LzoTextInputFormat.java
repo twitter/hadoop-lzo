@@ -15,6 +15,7 @@
  * along with Hadoop-Gpl-Compression.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
+ 
 package com.hadoop.mapreduce;
 
 import java.io.IOException;
