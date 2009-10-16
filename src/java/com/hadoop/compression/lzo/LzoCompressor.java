@@ -47,8 +47,8 @@ class LzoCompressor implements Compressor {
   private Buffer compressedDirectBuf = null;
   private boolean finish, finished;
 
-  private long bytesread = 0L;
-  private long byteswritten = 0L;
+  private long bytesRead = 0L;
+  private long bytesWritten = 0L;
 
   private CompressionStrategy strategy; // The lzo compression algorithm.
   @SuppressWarnings("unused")
@@ -230,7 +230,7 @@ class LzoCompressor implements Compressor {
       ((ByteBuffer)uncompressedDirectBuf).put(b, off, len);
       uncompressedDirectBufLen = uncompressedDirectBuf.position();
     }
-    bytesread += len;
+    bytesRead += len;
   }
 
   /**
@@ -288,7 +288,7 @@ class LzoCompressor implements Compressor {
     if (n > 0) {
       n = Math.min(n, len);
       ((ByteBuffer)compressedDirectBuf).get(b, off, n);
-      byteswritten += n;
+      bytesWritten += n;
       return n;
     }
 
@@ -317,7 +317,7 @@ class LzoCompressor implements Compressor {
 
     // Get atmost 'len' bytes
     n = Math.min(n, len);
-    byteswritten += n;
+    bytesWritten += n;
     ((ByteBuffer)compressedDirectBuf).get(b, off, n);
 
     return n;
@@ -331,23 +331,34 @@ class LzoCompressor implements Compressor {
     compressedDirectBuf.clear();
     compressedDirectBuf.limit(0);
     userBufOff = userBufLen = 0;
-    bytesread = byteswritten = 0L;
+    bytesRead = bytesWritten = 0L;
   }
 
   /**
    * Return number of bytes given to this compressor since last reset.
    */
   public synchronized long getBytesRead() {
-    return bytesread;
+    return bytesRead;
   }
 
   /**
    * Return number of bytes consumed by callers of compress since last reset.
    */
   public synchronized long getBytesWritten() {
-    return byteswritten;
+    return bytesWritten;
   }
-
+  
+  /**
+   * Return the uncompressed byte buffer contents, for use when the compressed block
+   * would be larger than the uncompressed block, because the LZO spec dictates that
+   * the uncompressed bytes are written to the file in this case.
+   */
+  public byte[] uncompressedBytes() {
+    byte[] b = new byte[(int)bytesRead];
+    ((ByteBuffer)uncompressedDirectBuf).get(b);
+    return b;
+  }
+  
   /**
    * Noop.
    */

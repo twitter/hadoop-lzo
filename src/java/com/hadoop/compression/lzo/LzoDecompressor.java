@@ -236,7 +236,7 @@ class LzoDecompressor implements Decompressor {
   }
 
   public synchronized boolean needsInput() {
-    // Consume remanining compressed data?
+    // Consume remaining compressed data?
     if (uncompressedDirectBuf.remaining() > 0) {
       return false;
     }

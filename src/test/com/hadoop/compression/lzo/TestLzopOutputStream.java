@@ -18,10 +18,13 @@
 
 package com.hadoop.compression.lzo;
 
+import java.io.BufferedWriter;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
 
@@ -31,11 +34,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Test the LzopInputStream, making sure we get the same bytes when reading a compressed file through
- * it as when we read the corresponding uncompressed file through a standard input stream.
+ * Test the LzoOutputFormat, make sure that it can write files of different sizes and read them back in
+ * identically.
  */
-public class TestLzopInputStream extends TestCase {
-  private static final Log LOG = LogFactory.getLog(TestLzopInputStream.class);
+public class TestLzopOutputStream extends TestCase {
+  private static final Log LOG = LogFactory.getLog(TestLzopOutputStream.class);
 
   private String inputDataPath;
 
@@ -97,34 +100,63 @@ public class TestLzopInputStream extends TestCase {
     // Assumes the flat file is at filename, and the compressed version is filename.lzo
     File textFile = new File(inputDataPath, filename);
     File lzoFile = new File(inputDataPath, filename + new LzopCodec().getDefaultExtension());
+    File lzoOutFile = new File(inputDataPath, "output_" + filename + new LzopCodec().getDefaultExtension());
+    if (lzoOutFile.exists()) {
+      lzoOutFile.delete();
+    }
     LOG.info("Comparing files " + textFile + " and " + lzoFile);
 
+    //
+    // First, read in the text file, and write each line to an lzop output stream.
+    //
+    
     // Set up the text file reader.
     BufferedReader textBr = new BufferedReader(new InputStreamReader(new FileInputStream(textFile.getAbsolutePath())));
-    // Set up the LZO reader.
+    // Set up the LZO writer..
     int lzoBufferSize = 256 * 1024;
+    LzoCompressor.CompressionStrategy strategy = LzoCompressor.CompressionStrategy.LZO1X_1;
+    LzoCompressor lzoCompressor = new LzoCompressor(strategy, lzoBufferSize);
+    LzopOutputStream lzoOut = new LzopOutputStream(new FileOutputStream(lzoOutFile.getAbsolutePath()), lzoCompressor, lzoBufferSize, strategy);
+
+    // Now read line by line and stream out..
+    String textLine;
+    while ((textLine = textBr.readLine()) != null) {
+      textLine += "\n";
+      byte[] bytes = textLine.getBytes();
+      lzoOut.write(bytes, 0, bytes.length);
+    }
+    textBr.close();
+    lzoOut.close();
+    
+    //
+    // Now, read in the lzo we just wrote, decompressing and verifying line by line with the text file.
+    //
+    
+    // Set up the text file reader.
+    BufferedReader textBr2 = new BufferedReader(new InputStreamReader(new FileInputStream(textFile.getAbsolutePath())));
+    // Set up the LZO reader.
     LzopDecompressor lzoDecompressor = new LzopDecompressor(lzoBufferSize);
-    LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoFile.getAbsolutePath()), lzoDecompressor, lzoBufferSize);
+    LzopInputStream lzoIn = new LzopInputStream(new FileInputStream(lzoOutFile.getAbsolutePath()), lzoDecompressor, lzoBufferSize);
     BufferedReader lzoBr = new BufferedReader(new InputStreamReader(lzoIn));
 
     // Now read line by line and compare.
-    String textLine;
+    String textLine2;
     String lzoLine;
     int line = 0;
-    while ((textLine = textBr.readLine()) != null) {
+    while ((textLine2 = textBr2.readLine()) != null) {
       line++;
       lzoLine = lzoBr.readLine();
-      if (!lzoLine.equals(textLine)) {
+      if (!lzoLine.equals(textLine2)) {
         LOG.error("LZO decoding mismatch on line " + line + " of file " + filename);
-        LOG.error("Text line: [" + textLine + "], which has length " + textLine.length());
+        LOG.error("Text line: [" + textLine2 + "], which has length " + textLine2.length());
         LOG.error("LZO line: [" + lzoLine + "], which has length " + lzoLine.length());
       }
-      assertEquals(lzoLine, textLine);
+      assertEquals(lzoLine, textLine2);
     }
     // Verify that the lzo file is also exhausted at this point.
     assertNull(lzoBr.readLine());
     
-    textBr.close();
     lzoBr.close();
+    textBr2.close();
   }
 }

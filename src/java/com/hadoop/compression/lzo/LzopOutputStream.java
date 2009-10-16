@@ -26,8 +26,12 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.compress.BlockCompressorStream;
 import org.apache.hadoop.io.compress.Compressor;
 
-public class LzopOutputStream extends BlockCompressorStream {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+public class LzopOutputStream extends BlockCompressorStream {
+  private static final Log LOG = LogFactory.getLog(LzopOutputStream.class);
+  
   /**
    * Write an lzop-compatible header to the OutputStream provided.
    */
@@ -91,5 +95,32 @@ public class LzopOutputStream extends BlockCompressorStream {
       closed = true;
     }
   }
-
+  
+  @Override
+  protected void compress() throws IOException {
+    int len = compressor.compress(buffer, 0, buffer.length);
+    if (len > 0) {
+      // If the compressed buffer is actually larger than the uncompressed buffer,
+      // the LZO specification says that we should write the uncompressed bytes rather 
+      // than the compressed bytes.  The decompressor understands this because both sizes
+      // get written to the stream.  
+      if (compressor.getBytesRead() < compressor.getBytesWritten()) {
+        // Compression actually increased the size of the buffer, so write the uncompressed bytes.
+        byte[] uncompressed = ((LzoCompressor)compressor).uncompressedBytes();
+        rawWriteInt(uncompressed.length);
+        out.write(uncompressed, 0, uncompressed.length);
+      } else {
+        // Write out the compressed chunk.
+        rawWriteInt(len);
+        out.write(buffer, 0, len);
+      }
+    }
+  }
+  
+  private void rawWriteInt(int v) throws IOException {
+    out.write((v >>> 24) & 0xFF);
+    out.write((v >>> 16) & 0xFF);
+    out.write((v >>>  8) & 0xFF);
+    out.write((v >>>  0) & 0xFF);
+  }
 }
