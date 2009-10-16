@@ -28,7 +28,7 @@
  
   <property name="Name" value="Hadoop GPL Compression"/>
   <property name="name" value="hadoop-gpl-compression"/>
-  <property name="version" value="0.2.0-dev"/>
+  <property name="version" value="0.2.1"/>
   <property name="final.name" value="${name}-${version}"/>
   <property name="year" value="2008"/>
 
