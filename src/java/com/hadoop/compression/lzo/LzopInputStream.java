@@ -300,6 +300,12 @@ public class LzopInputStream extends BlockDecompressorStream {
       decompressor.decompress(b, 0, b.length);
     }
     super.close();
-    verifyChecksums();
+    try {
+      verifyChecksums();
+    } catch (IOException e) {
+      // LZO requires that each file ends with 4 trailing zeroes.  If we are here,
+      // the file didn't.  It's not critical, though, so log and eat it in this case.
+      LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.");
+    }
   }
 }
