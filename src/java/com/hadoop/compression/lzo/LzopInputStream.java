@@ -235,6 +235,7 @@ public class LzopInputStream extends BlockDecompressorStream {
           return -1;
         } catch (IOException e) {
           LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
+          return -1;
         }
       }
     }
