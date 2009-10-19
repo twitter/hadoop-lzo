@@ -213,7 +213,7 @@ public class LzopInputStream extends BlockDecompressorStream {
         byte[] tempBuf = new byte[4];
         uncompressedBlockSize =  readInt(in, tempBuf, 4);
         noCompressedBytes += 4;
-      } catch (IOException ioe) {
+      } catch (EOFException e) {
         return -1;
       }
       noUncompressedBytes = 0;
@@ -228,7 +228,12 @@ public class LzopInputStream extends BlockDecompressorStream {
         }
       }
       if (decompressor.needsInput()) {
-        getCompressedData();
+        try {
+          getCompressedData();
+        } catch (EOFException e) {
+          eof = true;
+          return -1;
+        }
       }
     }
 
