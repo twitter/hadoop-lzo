@@ -233,6 +233,8 @@ public class LzopInputStream extends BlockDecompressorStream {
         } catch (EOFException e) {
           eof = true;
           return -1;
+        } catch (IOException e) {
+          LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
         }
       }
     }
@@ -310,7 +312,7 @@ public class LzopInputStream extends BlockDecompressorStream {
     } catch (IOException e) {
       // LZO requires that each file ends with 4 trailing zeroes.  If we are here,
       // the file didn't.  It's not critical, though, so log and eat it in this case.
-      LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.");
+      LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.", e);
     }
   }
 }
