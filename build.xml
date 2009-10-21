@@ -27,7 +27,7 @@
   <property file="${basedir}/build.properties" />
  
   <property name="Name" value="Hadoop GPL Compression"/>
-  <property name="name" value="hadoop-gpl-compression"/>
+  <property name="name" value="hadoop-lzo"/>
   <property name="version" value="0.2.1"/>
   <property name="final.name" value="${name}-${version}"/>
   <property name="year" value="2008"/>
@@ -103,7 +103,7 @@
   <property name="common.ivy.lib.dir" location="${build.ivy.lib.dir}/${ant.project.name}/common"/>
   <property name="build.ivy.report.dir" location="${build.ivy.dir}/report" />
   <property name="build.ivy.maven.dir" location="${build.ivy.dir}/maven" />
-  <property name="build.ivy.maven.pom" location="${build.ivy.maven.dir}/hadoop-gpl-compression-${version}.pom" />
+  <property name="build.ivy.maven.pom" location="${build.ivy.maven.dir}/${name}-${version}.pom" />
   <property name="build.ivy.maven.jar" location="${build.ivy.maven.dir}/${version}.jar" />
 
   <!--this is the naming policy for artifacts we want pulled down-->
