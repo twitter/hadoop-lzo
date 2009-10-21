@@ -378,9 +378,6 @@
 
         <classpath >
           <path refid="classpath" />
-          <fileset dir="src/contrib/">
-            <include name="*/lib/*.jar" />
-          </fileset>
           <path refid="javadoc-classpath"/>
           <pathelement path="${java.class.path}"/>
           <pathelement location="${build.tools}"/>
