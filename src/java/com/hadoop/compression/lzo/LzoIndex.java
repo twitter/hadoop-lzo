@@ -231,7 +231,11 @@ public class LzoIndex {
         // seek to the start of the next block, skip any checksums
         is.seek(pos + compressedBlockSize + (4 * numChecksums));
       }
+
+      // Success. Rename filename.lzo.index.tmp to filename.lzo.index.
+      fs.rename(tmpOutputFile, outputFile);
     } finally {
+      // Close any open streams.
       if (is != null) {
         is.close();
       }
@@ -239,9 +243,9 @@ public class LzoIndex {
       if (os != null) {
         os.close();
       }
+      // Don't leave behind old attempts at index files if an exception is thrown.
+      fs.delete(tmpOutputFile, false);
     }
-
-    fs.rename(tmpOutputFile, outputFile);
   }
 }
 
