@@ -20,3 +20,6 @@
 .svn
 build/
 bin/
+*.ipr
+*.iml
+*.iws
