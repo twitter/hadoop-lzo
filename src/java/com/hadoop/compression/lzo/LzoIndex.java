@@ -47,8 +47,7 @@ public class LzoIndex {
 
   /**
    * Create an index specifying the number of LZO blocks in the file.
-   * @param blocks
-   *          The number of blocks in the LZO file the index is representing.
+   * @param blocks The number of blocks in the LZO file the index is representing.
    */
   public LzoIndex(int blocks) {
     blockPositions_ = new long[blocks];
@@ -56,11 +55,9 @@ public class LzoIndex {
 
   /**
    * Set the position for the block.
-   * 
-   * @param blockNumber
-   *          Block to set pos for.
-   * @param pos
-   *          Position.
+   *
+   * @param blockNumber Block to set pos for.
+   * @param pos Position.
    */
   public void set(int blockNumber, long pos) {
     blockPositions_[blockNumber] = pos;
@@ -68,11 +65,9 @@ public class LzoIndex {
 
   /**
    * Find the next lzo block start from the given position.
-   * 
-   * @param pos
-   *          The position to start looking from.
-   * @return Either the start position of the block or -1 if it couldn't be
-   *         found.
+   *
+   * @param pos The position to start looking from.
+   * @return Either the start position of the block or -1 if it couldn't be found.
    */
   public long findNextPosition(long pos) {
     int block = Arrays.binarySearch(blockPositions_, pos);
@@ -91,7 +86,7 @@ public class LzoIndex {
 
   /**
    * Return true if the index has no blocks set.
-   * 
+   *
    * @return true if the index has no blocks set.
    */
   public boolean isEmpty() {
@@ -101,11 +96,9 @@ public class LzoIndex {
   /**
    * Nudge a given file slice start to the nearest LZO block start no earlier than
    * the current slice start.
-   * 
-   * @param start
-   *          The current slice start
-   * @param end
-   *          The current slice end
+   *
+   * @param start The current slice start
+   * @param end The current slice end
    * @return The smallest block offset in the index between [start, end), or
    *         NOT_FOUND if there is none such.
    */
@@ -125,13 +118,9 @@ public class LzoIndex {
   /**
    * Nudge a given file slice end to the nearest LZO block end no earlier than
    * the current slice end.
-   * 
-   * @param end
-   *          The current slice end
-   *          
-   * @param fileSize
-   *          The size of the file, i.e. the max end position.
-   *          
+   *
+   * @param end The current slice end
+   * @param fileSize The size of the file, i.e. the max end position.
    * @return The smallest block offset in the index between [end, fileSize].
    */
   public long alignSliceEndToIndex(long end, long fileSize) {
@@ -148,11 +137,10 @@ public class LzoIndex {
 
   /**
    * Read the index of the lzo file.
-   * 
-   * @param split
-   *          Read the index of this file.
-   * @param fs
-   *          The index file is on this file system.
+
+   * @param fs The index file is on this file system.
+   * @param lzoFile the file whose index we are reading -- NOT the index file itself.  That is,
+   * pass in filename.lzo, not filename.lzo.index, for this parameter.
    * @throws IOException
    */
   public static LzoIndex readIndex(FileSystem fs, Path lzoFile) throws IOException {
@@ -182,11 +170,10 @@ public class LzoIndex {
   /**
    * Index an lzo file to allow the input format to split them into separate map
    * jobs.
-   * 
-   * @param fs
-   *          File system that contains the file.
-   * @param lzoFile
-   *          the lzo file to index.
+   *
+   * @param fs File system that contains the file.
+   * @param lzoFile the lzo file to index.  For filename.lzo, the created index file will be
+   * filename.lzo.index.
    * @throws IOException
    */
   public static void createIndex(FileSystem fs, Path lzoFile)
@@ -202,6 +189,9 @@ public class LzoIndex {
     Path outputFile = new Path(lzoFile.toString() + LZO_INDEX_SUFFIX);
     Path tmpOutputFile = outputFile.suffix(".tmp");
 
+    // Track whether an exception was thrown or not, so we know to either
+    // delete the tmp index file on failure, or rename it to the new index file on success.
+    boolean indexingSucceeded = false;
     try {
       is = fs.open(lzoFile);
       os = fs.create(tmpOutputFile);
@@ -231,9 +221,8 @@ public class LzoIndex {
         // seek to the start of the next block, skip any checksums
         is.seek(pos + compressedBlockSize + (4 * numChecksums));
       }
-
-      // Success. Rename filename.lzo.index.tmp to filename.lzo.index.
-      fs.rename(tmpOutputFile, outputFile);
+      // If we're here, indexing was successful.
+      indexingSucceeded = true;
     } finally {
       // Close any open streams.
       if (is != null) {
@@ -243,8 +232,14 @@ public class LzoIndex {
       if (os != null) {
         os.close();
       }
-      // Don't leave behind old attempts at index files if an exception is thrown.
-      fs.delete(tmpOutputFile, false);
+
+      if (!indexingSucceeded) {
+        // If indexing didn't succeed (i.e. an exception was thrown), clean up after ourselves.
+        fs.delete(tmpOutputFile, false);
+      } else {
+        // Otherwise, rename filename.lzo.index.tmp to filename.lzo.index.
+        fs.rename(tmpOutputFile, outputFile);
+      }
     }
   }
 }
