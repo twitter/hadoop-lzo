@@ -64,6 +64,24 @@ public class LzoIndex {
   }
 
   /**
+   * Get the total number of blocks in the index file.
+   */
+  public int getNumberOfBlocks() {
+    return blockPositions_.length;
+  }
+
+  /**
+   * Get the block offset for a given block.
+   * @param block
+   * @return the byte offset into the file where this block starts.  It is the developer's
+   * responsibility to call getNumberOfBlocks() to know appropriate bounds on the parameter.
+   * The argument block should satisfy 0 <= block < getNumberOfBlocks().
+   */
+  public long getPosition(int block) {
+    return blockPositions_[block];
+  }
+
+  /**
    * Find the next lzo block start from the given position.
    *
    * @param pos The position to start looking from.
