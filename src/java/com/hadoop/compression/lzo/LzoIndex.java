@@ -36,6 +36,7 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
  */
 public class LzoIndex {
   public static final String LZO_INDEX_SUFFIX = ".index";
+  public static final String LZO_TMP_INDEX_SUFFIX = ".index.tmp";
   public static final long NOT_FOUND = -1;
 
   private long[] blockPositions_;
@@ -164,7 +165,7 @@ public class LzoIndex {
   public static LzoIndex readIndex(FileSystem fs, Path lzoFile) throws IOException {
     FSDataInputStream indexIn = null;
     try {
-      Path indexFile = new Path(lzoFile.toString() + LZO_INDEX_SUFFIX);
+      Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
       if (!fs.exists(indexFile)) {
         // return empty index, fall back to the unsplittable mode
         return new LzoIndex();
@@ -204,8 +205,8 @@ public class LzoIndex {
 
     FSDataInputStream is = null;
     FSDataOutputStream os = null;
-    Path outputFile = new Path(lzoFile.toString() + LZO_INDEX_SUFFIX);
-    Path tmpOutputFile = outputFile.suffix(".tmp");
+    Path outputFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
+    Path tmpOutputFile = lzoFile.suffix(LZO_TMP_INDEX_SUFFIX);
 
     // Track whether an exception was thrown or not, so we know to either
     // delete the tmp index file on failure, or rename it to the new index file on success.
