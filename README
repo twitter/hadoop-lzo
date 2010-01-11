@@ -1,9 +1,11 @@
 Hadoop-LZO
 ==========
 
-### About
+Hadoop-LZO is a project to bring splittable LZO compression to Hadoop.  LZO is an ideal compression format for Hadoop due to its combination of speed and compression size.  However, LZO files are not natively splittable, meaning the parallelism that is the core of Hadoop is gone.  This project re-enables that parallelism with LZO compressed files, and also comes with standard utilities (input/output streams, etc) for working with LZO files.
 
-This project builds off the great work done at code.google.com/p/hadoop-gpl-compression.  As of issue 41, the differences in this codebase are:
+### Origins
+
+This project builds off the great work done at code.google.com/p/hadoop-gpl-compression.  As of issue 41, the differences in this codebase are the following.
 
 - it fixes a few bugs in hadoop-gpl-compression -- notably, it allows the decompressor to read small or uncompressable lzo files, and also fixes the compressor to follow the lzo standard when compressing small or uncompressible chunks.  it also fixes a number of inconsistenly caught and thrown exception cases that can occur when the lzo writer gets killed mid-stream, plus some other smaller issues (see commit log).
 - it adds the ability to work with Hadoop streaming via the com.apache.hadoop.mapred.DeprecatedLzoTextInputFormat class
@@ -20,7 +22,7 @@ To get started, see http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ.  T
 
 You can read more about Hadoop, LZO, and how we're using it at Twitter at http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/.
 
-1. Once the libs are built and installed, you may want to add them to the class paths and library paths.  That is, in hadoop-env.sh, set
+Once the libs are built and installed, you may want to add them to the class paths and library paths.  That is, in hadoop-env.sh, set
 
 export HADOOP_CLASSPATH=/path/to/your/hadoop-gpl-compression.jar
 export JAVA_LIBRARY_PATH=/path/to/hadoop-gpl-native-libs:/path/to/standard-hadoop-native-libs
