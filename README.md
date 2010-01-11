@@ -18,9 +18,9 @@ LZO is a wonderful compression scheme to use with Hadoop because it's incredibly
 
 ### Building and Configuring
 
-To get started, see http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ.  This project is built exactly the same way; please follow the answer to "How do I configure Hadoop to use these classes?" on that page.
+To get started, see [http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ](http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ).  This project is built exactly the same way; please follow the answer to "How do I configure Hadoop to use these classes?" on that page.
 
-You can read more about Hadoop, LZO, and how we're using it at Twitter at http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/.
+You can read more about Hadoop, LZO, and how we're using it at Twitter at [http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/](http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/).
 
 Once the libs are built and installed, you may want to add them to the class paths and library paths.  That is, in hadoop-env.sh, set
 
@@ -31,7 +31,7 @@ Note that there seems to be a bug in /path/to/hadoop/bin/hadoop; comment out the
 
         JAVA_LIBRARY_PATH=''
 
-because it keeps Hadoop from keeping the alteration you made to JAVA_LIBRARY_PATH above.  (Update: see https://issues.apache.org/jira/browse/HADOOP-6453).  Make sure you restart your jobtrackers and tasktrackers after uploading and changing configs so that they take effect.
+because it keeps Hadoop from keeping the alteration you made to JAVA_LIBRARY_PATH above.  (Update: see [https://issues.apache.org/jira/browse/HADOOP-6453](https://issues.apache.org/jira/browse/HADOOP-6453)).  Make sure you restart your jobtrackers and tasktrackers after uploading and changing configs so that they take effect.
 
 ### Using Hadoop and LZO
 
