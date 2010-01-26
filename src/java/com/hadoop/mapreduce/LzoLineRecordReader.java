@@ -15,7 +15,7 @@
  * along with Hadoop-Gpl-Compression.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
- 
+
 package com.hadoop.mapreduce;
 
 import java.io.IOException;
@@ -94,7 +94,7 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
     final CompressionCodec codec = compressionCodecs.getCodec(file);
     if (codec == null) {
-      throw new IOException("No codec for file " + file + " not found, cannot run");
+      throw new IOException("Codec for file " + file + " not found, cannot run");
     }
 
     // open the file and seek to the start of the split
