@@ -92,6 +92,7 @@ Java_com_hadoop_compression_lzo_LzoDecompressor_initIDs(
 	  char* msg = (char*)malloc(1000);
 	  snprintf(msg, 1000, "%s (%s)!", "Cannot load " HADOOP_LZO_LIBRARY, dlerror());
 	  THROW(env, "java/lang/UnsatisfiedLinkError", msg);
+    free(msg);
 	  return;
 	}
     
@@ -210,7 +211,7 @@ Java_com_hadoop_compression_lzo_LzoDecompressor_decompressBytesDirect(
     // lzo decompresses all input data
     (*env)->SetIntField(env, this, LzoDecompressor_compressedDirectBufLen, 0);
   } else {
-    const int msg_len = 32;
+    const int msg_len = 1024;
     char exception_msg[msg_len];
     snprintf(exception_msg, msg_len, "%s returned: %d", 
               lzo_decompressor_function, rv);
