@@ -217,8 +217,8 @@ public class LzoIndex {
       LzopDecompressor decompressor = (LzopDecompressor) codec.createDecompressor();
       // Solely for reading the header
       codec.createInputStream(is, decompressor);
-
-      int numChecksums = decompressor.getChecksumsCount();
+      int numCompressedChecksums = decompressor.getCompressedChecksumsCount();
+      int numDecompressedChecksums = decompressor.getDecompressedChecksumsCount();
 
       while (true) {
         // read and ignore, we just want to get to the next int
@@ -234,11 +234,15 @@ public class LzoIndex {
           throw new IOException("Could not read compressed block size");
         }
 
+        // See LzopInputStream.getCompressedData
+        boolean isUncompressedBlock = (uncompressedBlockSize == compressedBlockSize);
+        int numChecksumsToSkip = isUncompressedBlock ?
+            numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
         long pos = is.getPos();
         // write the pos of the block start
         os.writeLong(pos - 8);
         // seek to the start of the next block, skip any checksums
-        is.seek(pos + compressedBlockSize + (4 * numChecksums));
+        is.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
       }
       // If we're here, indexing was successful.
       indexingSucceeded = true;

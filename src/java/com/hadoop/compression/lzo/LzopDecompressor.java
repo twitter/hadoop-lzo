@@ -37,7 +37,7 @@ public class LzopDecompressor extends LzoDecompressor {
   }
 
   /**
-   * Given a set of decompressed and compressed checksums, 
+   * Given a set of decompressed and compressed checksums,
    */
   public void initHeaderFlags(EnumSet<DChecksum> dflags,
       EnumSet<CChecksum> cflags) {
@@ -61,7 +61,25 @@ public class LzopDecompressor extends LzoDecompressor {
    * @return Number of checksum implementations in use.
    */
   public int getChecksumsCount() {
-    return this.chkCMap.size() + this.chkDMap.size();
+    return getCompressedChecksumsCount() + getDecompressedChecksumsCount();
+  }
+
+  /**
+   * Get the number of compressed checksum implementations
+   * the current lzo file uses.
+   * @return Number of compressed checksum implementations in use.
+   */
+  public int getCompressedChecksumsCount() {
+    return this.chkCMap.size();
+  }
+
+  /**
+   * Get the number of decompressed checksum implementations
+   * the current lzo file uses.
+   * @return Number of decompressed checksum implementations in use.
+   */
+  public int getDecompressedChecksumsCount() {
+    return this.chkDMap.size();
   }
 
   /**

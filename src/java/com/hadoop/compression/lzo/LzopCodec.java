@@ -44,17 +44,19 @@ public class LzopCodec extends LzoCodec {
   public static final int LZOP_COMPAT_VERSION = 0x0940;
 
   @Override
+  public CompressionOutputStream createOutputStream(OutputStream out) throws IOException {
+    return createOutputStream(out, createCompressor());
+  }
+
+  @Override
   public CompressionOutputStream createOutputStream(OutputStream out,
           Compressor compressor) throws IOException {
     if (!isNativeLzoLoaded(getConf())) {
       throw new RuntimeException("native-lzo library not available");
     }
-    LzoCompressor.CompressionStrategy strategy =
-      LzoCompressor.CompressionStrategy.valueOf(
-              getConf().get("io.compression.codec.lzo.compressor",
-                      LzoCompressor.CompressionStrategy.LZO1X_1.name()));
-    int bufferSize =
-      getConf().getInt("io.compression.codec.lzo.buffersize", 64*1024);
+    LzoCompressor.CompressionStrategy strategy = LzoCompressor.CompressionStrategy.valueOf(
+          getConf().get(LZO_COMPRESSOR_KEY, LzoCompressor.CompressionStrategy.LZO1X_1.name()));
+    int bufferSize = getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
     return new LzopOutputStream(out, compressor, bufferSize, strategy);
   }
 
@@ -66,7 +68,21 @@ public class LzopCodec extends LzoCodec {
       throw new RuntimeException("native-lzo library not available");
     }
     return new LzopInputStream(in, decompressor,
-            getConf().getInt("io.compression.codec.lzo.buffersize", 256 * 1024));
+            getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE));
+  }
+
+  @Override
+  public CompressionInputStream createInputStream(InputStream in) throws IOException {
+    return createInputStream(in, createDecompressor());
+  }
+
+  @Override
+  public Class<? extends Decompressor> getDecompressorType() {
+    // Ensure native-lzo library is loaded & initialized
+    if (!isNativeLzoLoaded(getConf())) {
+      throw new RuntimeException("native-lzo library not available");
+    }
+    return LzopDecompressor.class;
   }
 
   @Override
@@ -74,8 +90,7 @@ public class LzopCodec extends LzoCodec {
     if (!isNativeLzoLoaded(getConf())) {
       throw new RuntimeException("native-lzo library not available");
     }
-    return new LzopDecompressor(getConf().getInt(
-            "io.compression.codec.lzo.buffersize", 256 * 1024));
+    return new LzopDecompressor(getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE));
   }
 
   @Override

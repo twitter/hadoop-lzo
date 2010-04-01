@@ -30,7 +30,8 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
   private TaskAttemptContext context;
 
   private int numBlocksRead = 0;
-  private int numChecksums = -1;
+  private int numDecompressedChecksums = -1;
+  private int numCompressedChecksums = -1;
   private long totalFileSize = 0;
   private Path lzoFile;
 
@@ -59,7 +60,8 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
     // This must be called AFTER createInputStream is called, because createInputStream
     // is what reads the header, which has the checksum information.  Otherwise getChecksumsCount
     // erroneously returns zero, and all block offsets will be wrong.
-    numChecksums = lzopDecompressor.getChecksumsCount();
+    numCompressedChecksums = lzopDecompressor.getCompressedChecksumsCount();
+    numDecompressedChecksums = lzopDecompressor.getDecompressedChecksumsCount();
   }
 
   @Override
@@ -79,11 +81,16 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
                              rawInputStream.getPos() + " in file " + lzoFile);
     }
 
+    // See LzopInputStream.getCompressedData
+    boolean isUncompressedBlock = (uncompressedBlockSize == compressedBlockSize);
+    int numChecksumsToSkip = isUncompressedBlock ?
+            numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
+
     // Get the current position.  Since we've read two ints, the current block started 8 bytes ago.
     long pos = rawInputStream.getPos();
     curValue.set(pos - 8);
     // Seek beyond the checksums and beyond the block data to the beginning of the next block.
-    rawInputStream.seek(pos + compressedBlockSize + 4 * numChecksums);
+    rawInputStream.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
     ++numBlocksRead;
 
     // Log some progress every so often.
