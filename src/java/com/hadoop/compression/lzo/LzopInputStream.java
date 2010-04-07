@@ -104,10 +104,10 @@ public class LzopInputStream extends BlockDecompressorStream {
           Integer.toHexString(LzopCodec.LZOP_VERSION) + ")");
     }
     hitem = readHeaderItem(in, buf, 2, adler, crc32); // lzo library version
-    if (hitem > LzoDecompressor.LZO_LIBRARY_VERSION) {
+    if (hitem < LzoDecompressor.MINIMUM_LZO_VERSION) {
       throw new IOException("Compressed with incompatible lzo version: 0x" +
-          Integer.toHexString(hitem) + " (expected 0x" +
-          Integer.toHexString(LzoDecompressor.LZO_LIBRARY_VERSION) + ")");
+          Integer.toHexString(hitem) + " (expected at least 0x" +
+          Integer.toHexString(LzoDecompressor.MINIMUM_LZO_VERSION) + ")");
     }
     hitem = readHeaderItem(in, buf, 2, adler, crc32); // lzop extract version
     if (hitem > LzopCodec.LZOP_VERSION) {
