@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.compress.BlockDecompressorStream;
 import org.apache.hadoop.io.compress.Decompressor;
+import org.apache.hadoop.io.IOUtils;
 
 public class LzopInputStream extends BlockDecompressorStream {
 
@@ -60,9 +61,7 @@ public class LzopInputStream extends BlockDecompressorStream {
    */
   private static int readInt(InputStream in, byte[] buf, int len) 
   throws IOException {
-    if (0 > in.read(buf, 0, len)) {
-      throw new EOFException();
-    }
+    IOUtils.readFully(in, buf, 0, len);
     int ret = (0xFF & buf[0]) << 24;
     ret    |= (0xFF & buf[1]) << 16;
     ret    |= (0xFF & buf[2]) << 8;
@@ -88,9 +87,7 @@ public class LzopInputStream extends BlockDecompressorStream {
    * and ignoring most everything else.
    */
   protected void readHeader(InputStream in) throws IOException {
-    if (0 > in.read(buf, 0, 9)) {
-      throw new EOFException();
-    }
+    IOUtils.readFully(in, buf, 0, 9);
     if (!Arrays.equals(buf, LzopCodec.LZO_MAGIC)) {
       throw new IOException("Invalid LZO header");
     }
@@ -104,10 +101,10 @@ public class LzopInputStream extends BlockDecompressorStream {
           Integer.toHexString(LzopCodec.LZOP_VERSION) + ")");
     }
     hitem = readHeaderItem(in, buf, 2, adler, crc32); // lzo library version
-    if (hitem > LzoDecompressor.LZO_LIBRARY_VERSION) {
+    if (hitem < LzoDecompressor.MINIMUM_LZO_VERSION) {
       throw new IOException("Compressed with incompatible lzo version: 0x" +
-          Integer.toHexString(hitem) + " (expected 0x" +
-          Integer.toHexString(LzoDecompressor.LZO_LIBRARY_VERSION) + ")");
+          Integer.toHexString(hitem) + " (expected at least 0x" +
+          Integer.toHexString(LzoDecompressor.MINIMUM_LZO_VERSION) + ")");
     }
     hitem = readHeaderItem(in, buf, 2, adler, crc32); // lzop extract version
     if (hitem > LzopCodec.LZOP_VERSION) {

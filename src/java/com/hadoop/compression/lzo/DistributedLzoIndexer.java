@@ -80,6 +80,12 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       walkPath(new Path(strPath), nonTemporaryFilter, inputPaths);
     }
 
+    if (inputPaths.isEmpty()) {
+      System.err.println("No input paths found - perhaps all " +
+        ".lzo files have already been indexed.");
+      return 0;
+    }
+
     Configuration conf = new Configuration();
     Job job = new Job(conf);
     job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));

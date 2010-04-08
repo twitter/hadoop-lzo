@@ -201,6 +201,11 @@ public class LzoIndex {
     Configuration conf = fs.getConf();
     CompressionCodecFactory factory = new CompressionCodecFactory(conf);
     CompressionCodec codec = factory.getCodec(lzoFile);
+    if (null == codec) {
+      throw new IOException("Could not find codec for file " + lzoFile +
+        " - you may need to add the LZO codec to your io.compression.codecs " +
+        "configuration in core-site.xml");
+    }
     ((Configurable) codec).setConf(conf);
 
     FSDataInputStream is = null;

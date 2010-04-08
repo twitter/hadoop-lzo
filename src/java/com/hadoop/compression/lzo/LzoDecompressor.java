@@ -39,6 +39,14 @@ class LzoDecompressor implements Decompressor {
   @SuppressWarnings({ "unchecked", "unused" })
   private static Class clazz = LzoDecompressor.class;
 
+  /**
+   * The minimum version of LZO that we can read.
+   * Set to 1.0 since there were a couple header
+   * size changes prior to that.
+   * See read_header() in lzop.c
+   */
+  public static int MINIMUM_LZO_VERSION = 0x0100;
+
   private int directBufferSize;
   private Buffer compressedDirectBuf = null;
   private int compressedDirectBufLen;

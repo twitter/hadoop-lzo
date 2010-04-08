@@ -183,10 +183,7 @@
     <tstamp>
       <format property="build_time" pattern="MM/dd/yyyy hh:mm aa" timezone="GMT"/>
     </tstamp>
-    <exec executable="git" outputproperty="build_revision">
-      <arg value="rev-parse"/>
-      <arg value="HEAD"/>
-    </exec>
+    <exec executable="${src.dir}/get_build_revision.sh" outputproperty="build_revision" />
     <exec executable="whoami" outputproperty="build_author"/>
     <exec executable="uname" outputproperty="build_os">
       <arg value="-a"/>
