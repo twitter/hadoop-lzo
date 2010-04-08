@@ -55,13 +55,38 @@ public class LzopInputStream extends BlockDecompressorStream {
     readHeader(in);
   }
 
+
+  /**
+   * Reads len bytes in a loop.
+   *
+   * This is copied from IOUtils.readFully except that it throws an EOFException
+   * instead of generic IOException on EOF.
+   *
+   * @param in The InputStream to read from
+   * @param buf The buffer to fill
+   * @param off offset from the buffer
+   * @param len the length of bytes to read
+   */
+  private static void readFully( InputStream in, byte buf[],
+      int off, int len ) throws IOException, EOFException {
+    int toRead = len;
+    while ( toRead > 0 ) {
+      int ret = in.read( buf, off, toRead );
+      if ( ret < 0 ) {
+        throw new EOFException("Premature EOF from inputStream");
+      }
+      toRead -= ret;
+      off += ret;
+    }
+  }
+
   /**
    * Read len bytes into buf, st LSB of int returned is the last byte of the
    * first word read.
    */
   private static int readInt(InputStream in, byte[] buf, int len) 
   throws IOException {
-    IOUtils.readFully(in, buf, 0, len);
+    readFully(in, buf, 0, len);
     int ret = (0xFF & buf[0]) << 24;
     ret    |= (0xFF & buf[1]) << 16;
     ret    |= (0xFF & buf[2]) << 8;
@@ -87,7 +112,7 @@ public class LzopInputStream extends BlockDecompressorStream {
    * and ignoring most everything else.
    */
   protected void readHeader(InputStream in) throws IOException {
-    IOUtils.readFully(in, buf, 0, 9);
+    readFully(in, buf, 0, 9);
     if (!Arrays.equals(buf, LzopCodec.LZO_MAGIC)) {
       throw new IOException("Invalid LZO header");
     }
@@ -280,15 +305,8 @@ public class LzopInputStream extends BlockDecompressorStream {
     if (compressedLen > buffer.length) {
       buffer = new byte[compressedLen];
     }
-    int n = 0, off = 0;
-    while (n < compressedLen) {
-      int count = in.read(buffer, off + n, compressedLen - n);
-      if (count < 0) {
-        throw new EOFException();
-      }
-      n += count;
-    }
-    noCompressedBytes += n;
+    readFully(in, buffer, 0, compressedLen);
+    noCompressedBytes += compressedLen;
 
     // Send the read data to the decompressor.
     ldecompressor.setInput(buffer, 0, compressedLen);
