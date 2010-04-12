@@ -280,6 +280,12 @@ public class LzopInputStream extends BlockDecompressorStream {
     int compressedLen = readInt(in, buf, 4);
     noCompressedBytes += 4;
 
+    if (compressedLen > LzoCodec.MAX_BLOCK_SIZE) {
+      throw new IOException("Compressed length " + compressedLen +
+        " exceeds max block size " + LzoCodec.MAX_BLOCK_SIZE +
+        " (probably corrupt file)");
+    }
+
     LzopDecompressor ldecompressor = (LzopDecompressor)decompressor;
     // If the lzo compressor compresses a block of data, and that compression
     // actually makes the block larger, it writes the block as uncompressed instead.

@@ -48,6 +48,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
   public static final String LZO_DECOMPRESSOR_KEY = "io.compression.codec.lzo.decompressor";
   public static final String LZO_BUFFER_SIZE_KEY = "io.compression.codec.lzo.buffersize";
   public static final int DEFAULT_LZO_BUFFER_SIZE = 256 * 1024;
+  public static final int MAX_BLOCK_SIZE = 64*1024*1024;
 
 
   private Configuration conf;
