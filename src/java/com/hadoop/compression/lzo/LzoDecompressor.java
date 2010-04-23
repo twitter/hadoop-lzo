@@ -220,14 +220,11 @@ class LzoDecompressor implements Decompressor {
   }
 
   synchronized void setInputFromSavedData() {
-    compressedDirectBufLen = userBufLen;
-    if (compressedDirectBufLen > directBufferSize) {
-      compressedDirectBufLen = directBufferSize;
-    }
-
     // If the current block is stored uncompressed, no need
     // to ready all the lzo machinery, because it will be bypassed.
     if (!isCurrentBlockUncompressed()) {
+      compressedDirectBufLen = Math.min(userBufLen, directBufferSize);
+      
       // Reinitialize lzo's input direct-buffer
       compressedDirectBuf.rewind();
       ((ByteBuffer)compressedDirectBuf).put(userBuf, userBufOff, 
