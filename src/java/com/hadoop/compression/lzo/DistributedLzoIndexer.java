@@ -93,6 +93,11 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     job.setOutputKeyClass(Path.class);
     job.setOutputValueClass(LongWritable.class);
 
+    // The LzoIndexOutputFormat doesn't currently work with speculative execution.
+    // Patches welcome.
+    job.getConfiguration().setBoolean(
+      "mapred.map.tasks.speculative.execution", false);
+
     job.setJarByClass(DistributedLzoIndexer.class);
     job.setInputFormatClass(LzoSplitInputFormat.class);
     job.setOutputFormatClass(LzoIndexOutputFormat.class);
