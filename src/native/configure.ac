@@ -21,6 +21,7 @@ AC_PREREQ(2.59)
 AC_INIT(gpl-compression, 0.1.0, omalley@apache.org)
 
 AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([subdir-objects foreign no-dist])
 
 AC_CONFIG_SRCDIR([impl/lzo/LzoCompressor.c])
