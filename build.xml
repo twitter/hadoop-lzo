@@ -258,7 +258,7 @@
 
   </target>
 
-  <target name="compile" depends="compile-java" 
+  <target name="compile" depends="compile-java,buildinfo" 
           description="Compile all">
   </target>
 
@@ -284,7 +284,7 @@
   <!-- ================================================================== -->
   <!-- Compile test code                                                  --> 
   <!-- ================================================================== -->
-  <target name="compile-java-test" depends="compile-java">
+  <target name="compile-java-test" depends="compile">
     <javac 
      encoding="${build.encoding}" 
      srcdir="${test.src.dir}"
