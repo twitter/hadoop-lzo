@@ -49,7 +49,7 @@ AC_CACHE_CHECK([Checking for the 'actual' dynamic-library for '-l$1'], ac_cv_lib
       AC_MSG_ERROR(Can't find either 'objdump' or 'ldd' to compute the dynamic library for '-l$1')
     fi
   else
-    ac_cv_libname_$1=libnotfound.so
+    AC_MSG_ERROR(Can't find library for '-l$1')
   fi
   rm -f conftest*
   ]

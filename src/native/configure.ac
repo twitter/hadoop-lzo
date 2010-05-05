@@ -61,7 +61,7 @@ AC_CHECK_FUNCS([mkdir uname memset])
 
 dnl Check for '-ljvm'
 JNI_LDFLAGS=""
-if test $JAVA_HOME != ""
+if test "x$JAVA_HOME" != "x"
 then
 	JNI_LDFLAGS="-L$JAVA_HOME/jre/lib/$OS_ARCH/server"
 fi
@@ -73,7 +73,7 @@ AC_SUBST([JNI_LDFLAGS])
 
 dnl Check for JNI headers
 JNI_CPPFLAGS=""
-if test $JAVA_HOME != ""
+if test "x$JAVA_HOME" != "x"
 then
 	for dir in `find $JAVA_HOME/include -follow -type d`
 	do

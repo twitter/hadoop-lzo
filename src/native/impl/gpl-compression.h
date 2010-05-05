@@ -52,10 +52,11 @@ static void *do_dlsym(JNIEnv *env, void *handle, const char *symbol) {
   	return NULL;
   }
   char *error = NULL;
+  dlerror(); // clear error
   void *func_ptr = dlsym(handle, symbol);
-  if ((error = dlerror()) != NULL) {
-  	THROW(env, "java/lang/UnsatisfiedLinkError", symbol);
-  	return NULL;
+  if ((func_ptr == NULL) &&
+      ((error = dlerror()) != NULL)) {
+    THROW(env, "java/lang/UnsatisfiedLinkError", error);
   }
   return func_ptr;
 }
