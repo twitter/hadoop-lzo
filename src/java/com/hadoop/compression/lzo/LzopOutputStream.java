@@ -23,14 +23,16 @@ import java.io.OutputStream;
 import java.util.zip.Adler32;
 
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.compress.BlockCompressorStream;
+import org.apache.hadoop.io.compress.CompressorStream;
 import org.apache.hadoop.io.compress.Compressor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class LzopOutputStream extends BlockCompressorStream {
+public class LzopOutputStream extends CompressorStream {
   private static final Log LOG = LogFactory.getLog(LzopOutputStream.class);
+
+  final int MAX_INPUT_SIZE;
 
   /**
    * Write an lzop-compatible header to the OutputStream provided.
@@ -77,8 +79,12 @@ public class LzopOutputStream extends BlockCompressorStream {
   public LzopOutputStream(OutputStream out, Compressor compressor,
           int bufferSize, LzoCompressor.CompressionStrategy strategy)
   throws IOException {
-    super(out, compressor, bufferSize, strategy.name().contains("LZO1")
-            ? (bufferSize >> 4) + 64 + 3 : (bufferSize >> 3) + 128 + 3);
+    super(out, compressor, bufferSize);
+
+    int overhead = strategy.name().contains("LZO1") ?
+      (bufferSize >> 4) + 64 + 3 : (bufferSize >> 3) + 128 + 3;
+    MAX_INPUT_SIZE = bufferSize - overhead;
+
     writeLzopHeader(out, strategy);
   }
 
@@ -96,9 +102,70 @@ public class LzopOutputStream extends BlockCompressorStream {
   }
 
   @Override
+  public void write(byte[] b, int off, int len) throws IOException {
+    // Sanity checks
+    if (compressor.finished()) {
+      throw new IOException("write beyond end of stream");
+    }
+    if (b == null) {
+      throw new NullPointerException();
+    } else if ((off < 0) || (off > b.length) || (len < 0) ||
+               ((off + len) > b.length)) {
+      throw new IndexOutOfBoundsException();
+    } else if (len == 0) {
+      return;
+    }
+
+    long limlen = compressor.getBytesRead();
+    if (len + limlen > MAX_INPUT_SIZE && limlen > 0) {
+      // Adding this segment would exceed the maximum size.
+      // Flush data if we have it.
+      finish();
+      compressor.reset();
+    }
+
+    if (len > MAX_INPUT_SIZE) {
+      // The data we're given exceeds the maximum size. Any data
+      // we had have been flushed, so we write out this chunk in segments
+      // not exceeding the maximum size until it is exhausted.
+      do {
+        int bufLen = Math.min(len, MAX_INPUT_SIZE);
+
+        compressor.setInput(b, off, bufLen);
+        finish();
+        compressor.reset();
+        off += bufLen;
+        len -= bufLen;
+      } while (len > 0);
+      return;
+    }
+
+    // Give data to the compressor
+    compressor.setInput(b, off, len);
+    if (!compressor.needsInput()) {
+      // compressor buffer size might be smaller than the maximum
+      // size, so we permit it to flush if required.
+      do {
+        compress();
+      } while (!compressor.needsInput());
+    }
+  }
+
+  @Override
+  public void finish() throws IOException {
+    if (!compressor.finished()) {
+      compressor.finish();
+      while (!compressor.finished()) {
+        compress();
+      }
+    }
+  }
+  @Override
   protected void compress() throws IOException {
     int len = compressor.compress(buffer, 0, buffer.length);
     if (len > 0) {
+      rawWriteInt((int)compressor.getBytesRead());
+
       // If the compressed buffer is actually larger than the uncompressed buffer,
       // the LZO specification says that we should write the uncompressed bytes rather
       // than the compressed bytes.  The decompressor understands this because both sizes

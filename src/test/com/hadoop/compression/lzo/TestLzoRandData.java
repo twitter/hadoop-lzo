@@ -37,10 +37,19 @@ public class TestLzoRandData extends TestCase {
   }
 
   public void testLzoRandData() throws Exception {
+    runTest(100, 100000);
+  }
 
+  public void testLzoRandDataLargeChunks() throws Exception {
+    runTest(20, 500000);
+  }
+
+  public void testLzoRandDataHugeChunks() throws Exception {
+    runTest(10, 1000000);
+  }
+
+  private void runTest(int numChunks, int chunkSize) throws Exception {
     CompressionCodec codec = ReflectionUtils.newInstance(LzopCodec.class, conf);
-    final int numChunks = 100;
-    final int chunkSize = 10000;
 
     final Random writerRand = new Random(12345);
     final Random readerRand = new Random(12345);
