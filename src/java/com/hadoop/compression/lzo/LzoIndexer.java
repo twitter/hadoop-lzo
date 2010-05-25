@@ -117,7 +117,7 @@ public class LzoIndexer {
       LzoIndex.createIndex(fs, lzoPath);
       return true;
     } catch (IOException e) {
-      LOG.error("Error indexing " + lzoPath + ".\n" + e);
+      LOG.error("Error indexing " + lzoPath, e);
       return false;
     }
   }
@@ -136,7 +136,7 @@ public class LzoIndexer {
       try {
         lzoIndexer.index(new Path(arg));
       } catch (IOException e) {
-        System.out.println("Error indexing " + arg + ": " + e);
+        LOG.error("Error indexing " + arg, e);
       }
     }
   }
