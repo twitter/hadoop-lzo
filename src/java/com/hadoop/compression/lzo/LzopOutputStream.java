@@ -103,6 +103,13 @@ public class LzopOutputStream extends CompressorStream {
 
   @Override
   public void write(byte[] b, int off, int len) throws IOException {
+    // TODO: LzopOutputStream used to inherit from BlockCompressorStream
+    // but had a bug due to this inheritance chain. In order to fix the
+    // bug we pulled down the implementation of the superclass, which
+    // is overly general. Thus this function is not quite as succint
+    // as it could be, now that it's LZOP-specific.
+    // See: http://github.com/toddlipcon/hadoop-lzo/commit/5fe6dd4736a73fa33b86656ce8aeb011e7f2046c
+
     // Sanity checks
     if (compressor.finished()) {
       throw new IOException("write beyond end of stream");
