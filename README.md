@@ -24,8 +24,8 @@ You can read more about Hadoop, LZO, and how we're using it at Twitter at [http:
 
 Once the libs are built and installed, you may want to add them to the class paths and library paths.  That is, in hadoop-env.sh, set
 
-        export HADOOP_CLASSPATH=/path/to/your/hadoop-gpl-compression.jar
-        export JAVA_LIBRARY_PATH=/path/to/hadoop-gpl-native-libs:/path/to/standard-hadoop-native-libs
+        export HADOOP_CLASSPATH=/path/to/your/hadoop-lzo-lib.jar
+        export JAVA_LIBRARY_PATH=/path/to/hadoop-lzo-native-libs:/path/to/standard-hadoop-native-libs
 
 Note that there seems to be a bug in /path/to/hadoop/bin/hadoop; comment out the line
 
