@@ -3,8 +3,6 @@ package com.hadoop.mapreduce;
 import java.io.EOFException;
 import java.io.IOException;
 
-import com.hadoop.compression.lzo.LzopCodec;
-import com.hadoop.compression.lzo.LzopDecompressor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
@@ -15,10 +13,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.Decompressor;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
+import com.hadoop.compression.lzo.ILzopDecompressor;
 
 public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
   private static final Log LOG = LogFactory.getLog(LzoSplitRecordReader.class);
@@ -49,13 +50,13 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
     CompressionCodec codec = factory.getCodec(lzoFile);
     ((Configurable)codec).setConf(conf);
 
-    LzopDecompressor lzopDecompressor = (LzopDecompressor)codec.createDecompressor();
+    ILzopDecompressor lzopDecompressor = (ILzopDecompressor)codec.createDecompressor();
     FileSystem fs = lzoFile.getFileSystem(conf);
     rawInputStream = fs.open(lzoFile);
 
     // Creating the LzopInputStream here just reads the lzo header for us, nothing more.
     // We do the rest of our input off of the raw stream is.
-    codec.createInputStream(rawInputStream, lzopDecompressor);
+    codec.createInputStream(rawInputStream, (Decompressor)lzopDecompressor);
 
     // This must be called AFTER createInputStream is called, because createInputStream
     // is what reads the header, which has the checksum information.  Otherwise getChecksumsCount

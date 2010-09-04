@@ -5,11 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.hadoop.mapreduce.LzoIndexOutputFormat;
-import com.hadoop.mapreduce.LzoSplitInputFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
@@ -17,17 +14,18 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import com.hadoop.mapreduce.LzoIndexOutputFormat;
+import com.hadoop.mapreduce.LzoSplitInputFormat;
+
 public class DistributedLzoIndexer extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(DistributedLzoIndexer.class);
-  private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
+  private final String LZO_EXTENSION = LzoDefaults.getLzopDefaultExtension();
 
   private final PathFilter nonTemporaryFilter = new PathFilter() {
     public boolean accept(Path path) {

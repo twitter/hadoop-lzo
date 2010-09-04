@@ -33,6 +33,59 @@ Note that there seems to be a bug in /path/to/hadoop/bin/hadoop; comment out the
 
 because it keeps Hadoop from keeping the alteration you made to JAVA_LIBRARY_PATH above.  (Update: see [https://issues.apache.org/jira/browse/HADOOP-6453](https://issues.apache.org/jira/browse/HADOOP-6453)).  Make sure you restart your jobtrackers and tasktrackers after uploading and changing configs so that they take effect.
 
+### Building and Configuring (using JNA - experimental)
+
+Building library:
+
+        git clone git://github.com/nandub/hadoop-lzo.git
+        cd hadoop-lz
+        ant clean jar
+
+        cp build/hadoop-lzo-x.x.x.jar $HADOOP_INSTALL_DIR/lib
+        cp jna.jar $HADOOP_INSTALL_DIR/lib
+
+Configuring hadoop to use JNA.  Edit the hadoop-env.sh file:
+
+        export HADOOP_CLASSPATH=$HADOOP_INSTALL_DIR/lib/hadoop-lzo-x.x.x.jar
+        export JAVA_LIBRARY_PATH=$HADOOP_INSTALL_DIR/lib
+
+Additional steps are needed to add entries to hadoop configuration file to register the external codecs in the codec factory. Add the following key/value pairs into hadoop-site.xml (or core-site.xml):
+
+    <property>
+        <name>io.compression.codecs</name>
+        <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,
+               com.hadoop.compression.lzo.LzoCodec,com.hadoop.compression.lzo.LzopCodec,
+               org.apache.hadoop.io.compress.BZip2Codec,
+               com.hadoop.compression.lzo.jna.LzoCodec,com.hadoop.compression.lzo.jna.LzopCodec
+        </value>
+    </property>
+    <property>
+        <name>io.compression.codec.lzo.class</name>
+        <value>com.hadoop.compression.lzo.jna.LzoCodec</value>
+    </property>
+
+If you would like to use lzo to compress intermediate map output, set the following in hadoop-site.xml:
+
+    <property>
+        <name>mapred.compress.map.output</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>mapred.map.output.compression.codec</name>
+        <value>com.hadoop.compression.lzo.jna.LzoCodec</value>
+    </property>
+
+Or if you are using Hadoop 0.21 or later, set the following in mapred-site.xml:
+
+    <property>
+        <name>mapreduce.map.output.compress</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>mapreduce.map.output.compress.codec</name>
+        <value>com.hadoop.compression.lzo.LzoCodec</value>
+    </property>
+
 ### Using Hadoop and LZO
 
 #### Reading and Writing LZO Data

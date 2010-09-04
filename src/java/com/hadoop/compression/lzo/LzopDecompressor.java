@@ -23,7 +23,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.zip.Checksum;
 
-public class LzopDecompressor extends LzoDecompressor {
+public class LzopDecompressor extends LzoDecompressor implements ILzopDecompressor {
 
   private final EnumMap<DChecksum,Checksum> chkDMap = new EnumMap<DChecksum,Checksum>(DChecksum.class);
   private final EnumMap<CChecksum,Checksum> chkCMap = new EnumMap<CChecksum,Checksum>(CChecksum.class);
@@ -69,6 +69,7 @@ public class LzopDecompressor extends LzoDecompressor {
    * the current lzo file uses.
    * @return Number of compressed checksum implementations in use.
    */
+  @Override
   public int getCompressedChecksumsCount() {
     return this.chkCMap.size();
   }
@@ -78,6 +79,7 @@ public class LzopDecompressor extends LzoDecompressor {
    * the current lzo file uses.
    * @return Number of decompressed checksum implementations in use.
    */
+  @Override
   public int getDecompressedChecksumsCount() {
     return this.chkDMap.size();
   }

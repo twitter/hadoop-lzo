@@ -38,8 +38,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
+import com.hadoop.compression.lzo.LzoDefaults;
 import com.hadoop.compression.lzo.LzoIndex;
-import com.hadoop.compression.lzo.LzopCodec;
 
 /**
  * An {@link InputFormat} for lzop compressed text files. Files are broken into
@@ -55,7 +55,7 @@ public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
     List<FileStatus> files = super.listStatus(job);
 
     FileSystem fs = FileSystem.get(job.getConfiguration());
-    String fileExtension = new LzopCodec().getDefaultExtension();
+    String fileExtension = LzoDefaults.getLzopDefaultExtension();
 
     for (Iterator<FileStatus> iterator = files.iterator(); iterator.hasNext();) {
       FileStatus fileStatus = iterator.next();

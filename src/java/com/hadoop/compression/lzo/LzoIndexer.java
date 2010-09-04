@@ -33,7 +33,7 @@ public class LzoIndexer {
   private static final Log LOG = LogFactory.getLog(LzoIndexer.class);
 
   private final Configuration conf_;
-  private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
+  private final String LZO_EXTENSION = LzoDefaults.getLzoDefaultExtension();
   private final String INDENT_STRING = "  ";
   private final DecimalFormat df_;
 
