@@ -132,11 +132,8 @@ public class LzoCodec implements Configurable, CompressionCodec {
      */
 
     // Create the lzo output-stream
-    LzoCompressor.CompressionStrategy strategy =
-      LzoCompressor.CompressionStrategy.valueOf(
-          conf.get(LZO_COMPRESSOR_KEY,
-              LzoCompressor.CompressionStrategy.LZO1X_1.name()));
-    int bufferSize = conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
+    LzoCompressor.CompressionStrategy strategy = getCompressionStrategy(conf);
+    int bufferSize = getBufferSize(conf);
     int compressionOverhead = strategy.name().contains("LZO1") ?
         (bufferSize >> 4) + 64 + 3 : (bufferSize >> 3) + 128 + 3;
 
@@ -158,11 +155,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
       throw new RuntimeException("native-lzo library not available");
     }
 
-    LzoCompressor.CompressionStrategy strategy = LzoCompressor.CompressionStrategy.valueOf(
-          conf.get(LZO_COMPRESSOR_KEY, LzoCompressor.CompressionStrategy.LZO1X_1.name()));
-    int bufferSize = conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
-
-    return new LzoCompressor(strategy, bufferSize);
+    return new LzoCompressor(conf);
   }
 
   public CompressionInputStream createInputStream(InputStream in)
@@ -195,11 +188,9 @@ public class LzoCodec implements Configurable, CompressionCodec {
       throw new RuntimeException("native-lzo library not available");
     }
 
-    LzoDecompressor.CompressionStrategy strategy = LzoDecompressor.CompressionStrategy.valueOf(
-        conf.get(LZO_DECOMPRESSOR_KEY, LzoDecompressor.CompressionStrategy.LZO1X.name()));
-    int bufferSize = conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
-
-    return new LzoDecompressor(strategy, bufferSize);
+    return new LzoDecompressor(
+      getDecompressionStrategy(conf),
+      getBufferSize(conf));
   }
 
   /**
@@ -209,4 +200,35 @@ public class LzoCodec implements Configurable, CompressionCodec {
   public String getDefaultExtension() {
     return ".lzo_deflate";
   }
+
+  static LzoCompressor.CompressionStrategy getCompressionStrategy(Configuration conf) {
+    return LzoCompressor.CompressionStrategy.valueOf(
+          conf.get(LZO_COMPRESSOR_KEY,
+            LzoCompressor.CompressionStrategy.LZO1X_1.name()));
+  }
+
+  static LzoDecompressor.CompressionStrategy getDecompressionStrategy(Configuration conf) {
+    return LzoDecompressor.CompressionStrategy.valueOf(
+          conf.get(LZO_DECOMPRESSOR_KEY,
+            LzoDecompressor.CompressionStrategy.LZO1X.name()));
+  }
+
+  static int getBufferSize(Configuration conf) {
+    return conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
+  }
+
+  public static void setCompressionStrategy(Configuration conf,
+                                            LzoCompressor.CompressionStrategy strategy) {
+    conf.set(LZO_COMPRESSOR_KEY, strategy.name());
+  }
+
+  public static void setDecompressionStrategy(Configuration conf,
+                                              LzoDecompressor.CompressionStrategy strategy) {
+    conf.set(LZO_DECOMPRESSOR_KEY, strategy.name());
+  }
+
+  public static void setBufferSize(Configuration conf, int bufferSize) {
+    conf.setInt(LZO_BUFFER_SIZE_KEY, bufferSize);
+  }
+
 }

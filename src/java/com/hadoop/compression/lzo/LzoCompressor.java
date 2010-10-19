@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.Compressor;
 
 /**
@@ -185,6 +186,21 @@ class LzoCompressor implements Compressor {
     return nativeLzoLoaded;
   }
 
+  public LzoCompressor(Configuration conf) {
+    reinit(conf);
+  }
+
+  /**
+   * Reinitialize from a configuration, possibly changing compression codec
+   */
+  //@Override (this method isn't in vanilla 0.20.2, but is in CDH3b3 and YDH)
+  public void reinit(Configuration conf) {
+    LzoCompressor.CompressionStrategy strategy = LzoCodec.getCompressionStrategy(conf);
+    int bufferSize = LzoCodec.getBufferSize(conf);
+
+    init(strategy, bufferSize);
+  }
+
   /** 
    * Creates a new compressor using the specified {@link CompressionStrategy}.
    * 
@@ -192,11 +208,16 @@ class LzoCompressor implements Compressor {
    * @param directBufferSize size of the direct buffer to be used.
    */
   public LzoCompressor(CompressionStrategy strategy, int directBufferSize) {
+    init(strategy, directBufferSize);
+  }
+
+  private void init(CompressionStrategy strategy, int directBufferSize) {
     this.strategy = strategy;
     this.directBufferSize = directBufferSize;
     uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
     compressedDirectBuf.position(directBufferSize);
+    reset();
 
     /**
      * Initialize {@link #lzoCompress} and {@link #workingMemoryBufLen}
@@ -364,6 +385,11 @@ class LzoCompressor implements Compressor {
    */
   public synchronized void end() {
     // nop
+  }
+
+  /** used for tests */
+  CompressionStrategy getStrategy() {
+    return strategy;
   }
 
   private native static void initIDs();
