@@ -34,4 +34,27 @@ public class TestLzoCodec extends TestCase {
                  ((LzoCompressor)c2).getStrategy());
 
   }
+
+  public void testCodecPoolReuseWithoutConf() throws Exception {
+    Configuration conf = new Configuration();
+    CompressionCodec codec = ReflectionUtils.newInstance(
+      LzoCodec.class, conf);
+
+    // Set compression strategy
+    LzoCodec.setCompressionStrategy(conf, LzoCompressor.CompressionStrategy.LZO1C_BEST_COMPRESSION);
+
+    // Put a codec in the pool with BEST_COMPRESSION strategy
+    Compressor c1 = CodecPool.getCompressor(codec, conf);
+    assertEquals(LzoCompressor.CompressionStrategy.LZO1C_BEST_COMPRESSION,
+                 ((LzoCompressor)c1).getStrategy());
+    CodecPool.returnCompressor(c1);
+
+    // Get it back from the pool without specifying any configuration,
+    // it should return to default compression
+    Compressor c2 = CodecPool.getCompressor(codec);
+    assertSame(c1, c2);
+
+    assertEquals(LzoCompressor.CompressionStrategy.LZO1X_1,
+                 ((LzoCompressor)c2).getStrategy());
+  }
 }

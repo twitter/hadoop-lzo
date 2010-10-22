@@ -195,6 +195,12 @@ class LzoCompressor implements Compressor {
    */
   //@Override (this method isn't in vanilla 0.20.2, but is in CDH3b3 and YDH)
   public void reinit(Configuration conf) {
+    // It's possible conf is null in the case that the compressor was got from a pool,
+    // and the new user of the codec doesn't specify a particular configuration
+    // to CodecPool.getCompressor(). So we use the defaults.
+    if (conf == null) {
+      conf = new Configuration();
+    }
     LzoCompressor.CompressionStrategy strategy = LzoCodec.getCompressionStrategy(conf);
     int bufferSize = LzoCodec.getBufferSize(conf);
 
