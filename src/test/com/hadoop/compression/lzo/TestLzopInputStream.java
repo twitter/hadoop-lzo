@@ -43,6 +43,7 @@ public class TestLzopInputStream extends TestCase {
   private final String bigFile = "100000.txt";
   private final String mediumFile = "1000.txt";
   private final String smallFile = "100.txt";
+  private final String emptyFile = "0.txt";
 
   @Override
   protected void setUp() throws Exception {
@@ -79,6 +80,14 @@ public class TestLzopInputStream extends TestCase {
   public void testSmallFile() throws NoSuchAlgorithmException, IOException,
   InterruptedException {    
     runTest(smallFile);
+  }
+
+  /**
+   * Test against a 0 line file.
+   */
+  public void testEmptyFile() throws NoSuchAlgorithmException, IOException,
+  InterruptedException {
+    runTest(emptyFile);
   }
 
   /**
