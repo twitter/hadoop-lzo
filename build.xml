@@ -18,7 +18,7 @@
  <http://www.gnu.org/licenses/>.
 -->
 
-<project name="Hadoop-GPL-Compression" default="jar" 
+<project name="Hadoop-GPL-Compression" default="compile"
    xmlns:ivy="antlib:org.apache.ivy.ant"> 
 
   <!-- Load all the default properties, and any the user wants    -->
@@ -223,8 +223,15 @@
     </copy>
      
   </target>
+  <target name="check-native-uptodate">
+    <uptodate
+        property="native.uptodate"
+        targetfile="${build.native}/lib/libgplcompression.so">
+      <srcfiles dir="${native.src.dir}" includes="**/*" />
+    </uptodate>
+  </target>
 
-  <target name="compile-native" depends="compile-java">
+  <target name="compile-native" depends="compile-java,check-native-uptodate" unless="native.uptodate">
   	
     <mkdir dir="${build.native}/lib"/>
     <mkdir dir="${build.native}/src/com/hadoop/compression/lzo"/>
@@ -258,7 +265,7 @@
 
   </target>
 
-  <target name="compile" depends="compile-java,buildinfo" 
+  <target name="compile" depends="compile-java,compile-native,buildinfo" 
           description="Compile all">
   </target>
 
