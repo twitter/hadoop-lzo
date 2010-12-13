@@ -186,7 +186,8 @@ public class LzopInputStream extends BlockDecompressorStream {
     hitem = readHeaderItem(in, buf, 1, adler, crc32); // fn len
     if (hitem > 0) {
       // skip filename
-      readHeaderItem(in, buf, hitem, adler, crc32);
+      int filenameLen = Math.max(4, hitem); // buffer must be at least 4 bytes for readHeaderItem to work.
+      readHeaderItem(in, new byte[filenameLen], hitem, adler, crc32);
     }
     int checksum = (int)(useCRC32 ? crc32.getValue() : adler.getValue());
     hitem = readHeaderItem(in, buf, 4, adler, crc32); // read checksum
