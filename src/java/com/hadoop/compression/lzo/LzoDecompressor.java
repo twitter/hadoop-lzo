@@ -296,21 +296,19 @@ class LzoDecompressor implements Decompressor {
       }
 
       // Check if there is data to decompress
-      if (compressedDirectBufLen <= 0) {
-        return 0;
+      if (compressedDirectBufLen > 0) {
+        // Re-initialize the lzo's output direct-buffer
+        uncompressedDirectBuf.rewind();
+        uncompressedDirectBuf.limit(directBufferSize);
+
+        // Decompress data
+        numBytes = decompressBytesDirect(strategy.getDecompressor());
+        uncompressedDirectBuf.limit(numBytes);
+
+        // Return atmost 'len' bytes
+        numBytes = Math.min(numBytes, len);
+        ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
       }
-
-      // Re-initialize the lzo's output direct-buffer
-      uncompressedDirectBuf.rewind();
-      uncompressedDirectBuf.limit(directBufferSize);
-
-      // Decompress data
-      numBytes = decompressBytesDirect(strategy.getDecompressor());
-      uncompressedDirectBuf.limit(numBytes);
-
-      // Return atmost 'len' bytes
-      numBytes = Math.min(numBytes, len);
-      ((ByteBuffer)uncompressedDirectBuf).get(b, off, numBytes);
     }
 
     // Set 'finished' if lzo has consumed all user-data
