@@ -220,8 +220,24 @@ class LzoCompressor implements Compressor {
   private void init(CompressionStrategy strategy, int directBufferSize) {
     this.strategy = strategy;
     this.directBufferSize = directBufferSize;
-    uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
-    compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
+
+    // If the direct buffers are already allocated and the correct size
+    // don't reallocate - this avoids potential rampant heap growth since GC
+    // doesn't get triggered by native buffer space usage.
+    if (uncompressedDirectBuf == null ||
+        uncompressedDirectBuf.capacity() != directBufferSize) {
+      uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
+    } else {
+      uncompressedDirectBuf.clear();
+    }
+
+    if (compressedDirectBuf == null ||
+        compressedDirectBuf.capacity() != directBufferSize) {
+      compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
+    } else {
+      compressedDirectBuf.clear();
+    }
+
     compressedDirectBuf.position(directBufferSize);
     reset();
 
