@@ -43,9 +43,9 @@ class LzoCompressor implements Compressor {
   private int directBufferSize;
   private byte[] userBuf = null;
   private int userBufOff = 0, userBufLen = 0;
-  private Buffer uncompressedDirectBuf = null;
+  private ByteBuffer uncompressedDirectBuf = null;
   private int uncompressedDirectBufLen = 0;
-  private Buffer compressedDirectBuf = null;
+  private ByteBuffer compressedDirectBuf = null;
   private boolean finish, finished;
 
   private long bytesRead = 0L;
@@ -56,7 +56,7 @@ class LzoCompressor implements Compressor {
   private long lzoCompressor = 0;       // The actual lzo compression function.
   private int workingMemoryBufLen = 0;  // The length of 'working memory' buf.
   @SuppressWarnings("unused")
-  private Buffer workingMemoryBuf;      // The 'working memory' for lzo.
+  private ByteBuffer workingMemoryBuf;      // The 'working memory' for lzo.
 
   /**
    * The compression algorithm for lzo library.
@@ -217,27 +217,42 @@ class LzoCompressor implements Compressor {
     init(strategy, directBufferSize);
   }
 
+  /**
+   * Reallocates a direct byte buffer by freeing the old one and allocating
+   * a new one, unless the size is the same, in which case it is simply
+   * cleared and returned.
+   *
+   * NOTE: this uses unsafe APIs to manually free memory - if anyone else
+   * has a reference to the 'buf' parameter they will likely read random
+   * data or cause a segfault by accessing it.
+   */
+  private ByteBuffer realloc(ByteBuffer buf, int newSize) {
+    if (buf != null) {
+      if (buf.capacity() == newSize) {
+        // Can use existing buffer
+        buf.clear();
+        return buf;
+      }
+      try {
+        // Manually free the old buffer using undocumented unsafe APIs.
+        // If this fails, we'll drop the reference and hope GC finds it
+        // eventually.
+        Object cleaner = buf.getClass().getMethod("cleaner").invoke(buf);
+        cleaner.getClass().getMethod("clean").invoke(cleaner);
+      } catch (Exception e) {
+        // Perhaps a non-sun-derived JVM - contributions welcome
+        LOG.warn("Couldn't realloc bytebuffer", e);
+      }
+    }
+    return ByteBuffer.allocateDirect(newSize);
+  }
+
   private void init(CompressionStrategy strategy, int directBufferSize) {
     this.strategy = strategy;
     this.directBufferSize = directBufferSize;
 
-    // If the direct buffers are already allocated and the correct size
-    // don't reallocate - this avoids potential rampant heap growth since GC
-    // doesn't get triggered by native buffer space usage.
-    if (uncompressedDirectBuf == null ||
-        uncompressedDirectBuf.capacity() != directBufferSize) {
-      uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
-    } else {
-      uncompressedDirectBuf.clear();
-    }
-
-    if (compressedDirectBuf == null ||
-        compressedDirectBuf.capacity() != directBufferSize) {
-      compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
-    } else {
-      compressedDirectBuf.clear();
-    }
-
+    uncompressedDirectBuf = realloc(uncompressedDirectBuf, directBufferSize);
+    compressedDirectBuf = realloc(compressedDirectBuf, directBufferSize);
     compressedDirectBuf.position(directBufferSize);
     reset();
 
@@ -245,7 +260,7 @@ class LzoCompressor implements Compressor {
      * Initialize {@link #lzoCompress} and {@link #workingMemoryBufLen}
      */
     init(this.strategy.getCompressor());
-    workingMemoryBuf = ByteBuffer.allocateDirect(workingMemoryBufLen);
+    workingMemoryBuf = realloc(workingMemoryBuf, workingMemoryBufLen);
   }
 
   /**
@@ -400,6 +415,13 @@ class LzoCompressor implements Compressor {
     byte[] b = new byte[(int)bytesRead];
     ((ByteBuffer)uncompressedDirectBuf).get(b);
     return b;
+  }
+
+  /**
+   * Used only by tests.
+   */
+  long getDirectBufferSize() {
+    return directBufferSize;
   }
   
   /**

@@ -134,12 +134,12 @@ Java_com_hadoop_compression_lzo_LzoCompressor_initIDs(
   LzoCompressor_finished = (*env)->GetFieldID(env, class, "finished", "Z");
   LzoCompressor_uncompressedDirectBuf = (*env)->GetFieldID(env, class, 
                                                     "uncompressedDirectBuf", 
-                                                    "Ljava/nio/Buffer;");
+                                                    "Ljava/nio/ByteBuffer;");
   LzoCompressor_uncompressedDirectBufLen = (*env)->GetFieldID(env, class, 
                                             "uncompressedDirectBufLen", "I");
   LzoCompressor_compressedDirectBuf = (*env)->GetFieldID(env, class, 
                                                         "compressedDirectBuf",
-                                                        "Ljava/nio/Buffer;");
+                                                        "Ljava/nio/ByteBuffer;");
   LzoCompressor_directBufferSize = (*env)->GetFieldID(env, class, 
                                             "directBufferSize", "I");
   LzoCompressor_lzoCompressor = (*env)->GetFieldID(env, class, 
@@ -148,7 +148,7 @@ Java_com_hadoop_compression_lzo_LzoCompressor_initIDs(
                                                 "workingMemoryBufLen", "I");
   LzoCompressor_workingMemoryBuf = (*env)->GetFieldID(env, class, 
                                               "workingMemoryBuf", 
-                                              "Ljava/nio/Buffer;");
+                                              "Ljava/nio/ByteBuffer;");
 
   // record lzo library version
   void* lzo_version_ptr = NULL;
