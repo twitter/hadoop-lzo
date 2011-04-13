@@ -46,6 +46,7 @@ public class TestLzopOutputStream extends TestCase {
   private final String bigFile = "100000.txt";
   private final String mediumFile = "1000.txt";
   private final String smallFile = "100.txt";
+  private final String issue20File = "issue20-lzop.txt";
 
   @Override
   protected void setUp() throws Exception {
@@ -82,6 +83,15 @@ public class TestLzopOutputStream extends TestCase {
   public void testSmallFile() throws NoSuchAlgorithmException, IOException,
   InterruptedException {    
     runTest(smallFile);
+  }
+
+  /**
+   * TODO: Write documentation.
+   *
+   */
+  public void testIssue20File() throws NoSuchAlgorithmException, IOException,
+  InterruptedException {
+    runTest(issue20File);
   }
 
   /**
