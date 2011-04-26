@@ -86,7 +86,17 @@ public class TestLzopOutputStream extends TestCase {
   }
 
   /**
-   * TODO: Write documentation.
+   * The LZO specification says that we should write the uncompressed bytes
+   * rather than the compressed bytes if the compressed buffer is actually
+   * larger ('&gt;') than the uncompressed buffer.
+   *
+   * To conform to the standard, this means we have to write the uncompressed
+   * bytes also when they have exactly the same size as the compressed bytes.
+   * (the '==' in '&lt;=').
+   *
+   * The input data of this test is known to compress to the same size as the
+   * uncompressed data.  Hence we verify that we handle the boundary condition
+   * correctly.
    *
    */
   public void testIssue20File() throws NoSuchAlgorithmException, IOException,
