@@ -192,11 +192,6 @@ Java_com_hadoop_compression_lzo_LzoCompressor_init(
   // Save the compressor-function into LzoCompressor_lzoCompressor
   (*env)->SetIntField(env, this, LzoCompressor_workingMemoryBufLen,
                       lzo_compressors[compressor].wrkmem);
-
-  // Save the compresson level into LzoCompressor_lzoCompressor
-  (*env)->SetIntField(env, this, LzoCompressor_lzoCompressionLevel,
-      lzo_compressors[compressor].compression_level);
-
   return;
 }
 
@@ -265,12 +260,17 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
 	// Compress
   lzo_uint no_compressed_bytes = compressed_direct_buf_len;
 	int rv = 0;
-  compression_level = lzo_compressors[compressor].compression_level;
   if (compression_level == UNDEFINED_COMPRESSION_LEVEL) {
     lzo_compress_t fptr = (lzo_compress_t) FUNC_PTR(lzo_compressor_funcptr);
     rv = fptr(uncompressed_bytes, uncompressed_direct_buf_len,
               compressed_bytes, &no_compressed_bytes, 
               workmem);
+  } else if (strstr(lzo_compressor_function, "lzo1x_999")
+             || strstr(lzo_compressor_function, "lzo1y_999")) {
+    // Compression levels are only available in these codecs.
+    rv = lzo1x_999_compress_level(uncompressed_bytes, uncompressed_direct_buf_len,
+                                  compressed_bytes, &no_compressed_bytes,
+                                  workmem, NULL, 0, 0, compression_level);
   } else {
     lzo_compress2_t fptr = (lzo_compress2_t) FUNC_PTR(lzo_compressor_funcptr);
     rv = fptr(uncompressed_bytes, uncompressed_direct_buf_len,
