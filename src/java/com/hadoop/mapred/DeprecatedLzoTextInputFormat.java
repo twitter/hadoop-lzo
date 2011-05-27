@@ -61,7 +61,6 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
   protected FileStatus[] listStatus(JobConf conf) throws IOException {
     List<FileStatus> files = new ArrayList<FileStatus>(Arrays.asList(super.listStatus(conf)));
 
-    FileSystem fs = FileSystem.get(conf);
     String fileExtension = new LzopCodec().getDefaultExtension();
 
     Iterator<FileStatus> it = files.iterator();
@@ -73,6 +72,7 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
         // Get rid of non-LZO files.
         it.remove();
       } else {
+        FileSystem fs = file.getFileSystem(conf);
         LzoIndex index = LzoIndex.readIndex(fs, file);
         indexes.put(file, index);
       }
@@ -93,10 +93,10 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
     // Find new starts/ends of the filesplit that align with the LZO blocks.
 
     List<FileSplit> result = new ArrayList<FileSplit>();
-    FileSystem fs = FileSystem.get(conf);
 
     for (FileSplit fileSplit: splits) {
       Path file = fileSplit.getPath();
+      FileSystem fs = file.getFileSystem(conf);
       LzoIndex index = indexes.get(file);
       if (index == null) {
         throw new IOException("Index not found for " + file);
