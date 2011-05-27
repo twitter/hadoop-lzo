@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,12 +55,13 @@ public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
   protected List<FileStatus> listStatus(JobContext job) throws IOException {
     List<FileStatus> files = super.listStatus(job);
 
-    FileSystem fs = FileSystem.get(job.getConfiguration());
     String fileExtension = new LzopCodec().getDefaultExtension();
+    Configuration conf = job.getConfiguration();
 
     for (Iterator<FileStatus> iterator = files.iterator(); iterator.hasNext();) {
       FileStatus fileStatus = iterator.next();
       Path file = fileStatus.getPath();
+      FileSystem fs = file.getFileSystem(conf);
 
       if (!file.toString().endsWith(fileExtension)) {
         //get rid of non lzo files
@@ -83,16 +85,17 @@ public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
     List<InputSplit> splits = super.getSplits(job);
+    Configuration conf = job.getConfiguration();
     // find new start/ends of the filesplit that aligns
     // with the lzo blocks
 
     List<InputSplit> result = new ArrayList<InputSplit>();
-    FileSystem fs = FileSystem.get(job.getConfiguration());
 
     for (InputSplit genericSplit : splits) {
       // load the index
       FileSplit fileSplit = (FileSplit) genericSplit;
       Path file = fileSplit.getPath();
+      FileSystem fs = file.getFileSystem(conf);
       LzoIndex index = indexes.get(file);
       if (index == null) {
         throw new IOException("Index not found for " + file);
