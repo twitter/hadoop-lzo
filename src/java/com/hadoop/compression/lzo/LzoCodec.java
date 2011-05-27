@@ -46,9 +46,11 @@ public class LzoCodec implements Configurable, CompressionCodec {
 
   public static final String LZO_COMPRESSOR_KEY = "io.compression.codec.lzo.compressor";
   public static final String LZO_DECOMPRESSOR_KEY = "io.compression.codec.lzo.decompressor";
+  public static final String LZO_COMPRESSION_LEVEL_KEY = "io.compression.codec.lzo.compression.level";
   public static final String LZO_BUFFER_SIZE_KEY = "io.compression.codec.lzo.buffersize";
   public static final int DEFAULT_LZO_BUFFER_SIZE = 256 * 1024;
   public static final int MAX_BLOCK_SIZE = 64*1024*1024;
+  public static final int UNDEFINED_COMPRESSION_LEVEL = -999;  // Constant from LzoCompressor.c
 
 
   private Configuration conf;
@@ -213,6 +215,10 @@ public class LzoCodec implements Configurable, CompressionCodec {
             LzoDecompressor.CompressionStrategy.LZO1X.name()));
   }
 
+  static int getCompressionLevel(Configuration conf) {
+    return conf.getInt(LZO_COMPRESSION_LEVEL_KEY, UNDEFINED_COMPRESSION_LEVEL);
+  }
+
   static int getBufferSize(Configuration conf) {
     return conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
   }
@@ -225,6 +231,10 @@ public class LzoCodec implements Configurable, CompressionCodec {
   public static void setDecompressionStrategy(Configuration conf,
                                               LzoDecompressor.CompressionStrategy strategy) {
     conf.set(LZO_DECOMPRESSOR_KEY, strategy.name());
+  }
+
+  public static void setCompressionLevel(Configuration conf, int compressionLevel) {
+    conf.setInt(LZO_COMPRESSION_LEVEL_KEY, compressionLevel);
   }
 
   public static void setBufferSize(Configuration conf, int bufferSize) {

@@ -57,6 +57,7 @@ class LzoCompressor implements Compressor {
   private int workingMemoryBufLen = 0;  // The length of 'working memory' buf.
   @SuppressWarnings("unused")
   private ByteBuffer workingMemoryBuf;      // The 'working memory' for lzo.
+  private int lzoCompressionLevel;
 
   /**
    * The compression algorithm for lzo library.
@@ -202,9 +203,10 @@ class LzoCompressor implements Compressor {
       conf = new Configuration();
     }
     LzoCompressor.CompressionStrategy strategy = LzoCodec.getCompressionStrategy(conf);
+    int compressionLevel = LzoCodec.getCompressionLevel(conf);
     int bufferSize = LzoCodec.getBufferSize(conf);
 
-    init(strategy, bufferSize);
+    init(strategy, compressionLevel, bufferSize);
   }
 
   /** 
@@ -214,7 +216,7 @@ class LzoCompressor implements Compressor {
    * @param directBufferSize size of the direct buffer to be used.
    */
   public LzoCompressor(CompressionStrategy strategy, int directBufferSize) {
-    init(strategy, directBufferSize);
+    init(strategy, LzoCodec.DEFAULT_LZO_BUFFER_SIZE, directBufferSize);
   }
 
   /**
@@ -247,8 +249,9 @@ class LzoCompressor implements Compressor {
     return ByteBuffer.allocateDirect(newSize);
   }
 
-  private void init(CompressionStrategy strategy, int directBufferSize) {
+  private void init(CompressionStrategy strategy, int compressionLevel, int directBufferSize) {
     this.strategy = strategy;
+    this.lzoCompressionLevel = compressionLevel;
     this.directBufferSize = directBufferSize;
 
     uncompressedDirectBuf = realloc(uncompressedDirectBuf, directBufferSize);
