@@ -35,6 +35,7 @@ typedef struct {
 
 #define UNDEFINED_COMPRESSION_LEVEL -999
 
+// Default compression level used when user supplies no value.
 static lzo_compressor lzo_compressors[] = {
   /** lzo1 compressors */
   /* 0 */   {"lzo1_compress", LZO1_MEM_COMPRESS, UNDEFINED_COMPRESSION_LEVEL},
@@ -219,8 +220,13 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
 									                        LzoCompressor_compressedDirectBuf);
 	lzo_uint compressed_direct_buf_len = (*env)->GetIntField(env, this, 
 									                            LzoCompressor_directBufferSize);
+
+  // Prefer the user defined compression level.
   int compression_level = (*env)->GetIntField(env, this,
       LzoCompressor_lzoCompressionLevel);
+  if (UNDEFINED_COMPRESSION_LEVEL == compression_level) {
+    compression_level = lzo_compressors[compressor].compression_level;
+  }
 
 	jobject working_memory_buf = (*env)->GetObjectField(env, this, 
 									                      LzoCompressor_workingMemoryBuf);
