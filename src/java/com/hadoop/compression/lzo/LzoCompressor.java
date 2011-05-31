@@ -216,7 +216,7 @@ class LzoCompressor implements Compressor {
    * @param directBufferSize size of the direct buffer to be used.
    */
   public LzoCompressor(CompressionStrategy strategy, int directBufferSize) {
-    init(strategy, LzoCodec.DEFAULT_LZO_BUFFER_SIZE, directBufferSize);
+    init(strategy, LzoCodec.UNDEFINED_COMPRESSION_LEVEL, directBufferSize);
   }
 
   /**
