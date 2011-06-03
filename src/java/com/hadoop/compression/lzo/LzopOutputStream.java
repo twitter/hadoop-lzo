@@ -177,7 +177,7 @@ public class LzopOutputStream extends CompressorStream {
       // the LZO specification says that we should write the uncompressed bytes rather
       // than the compressed bytes.  The decompressor understands this because both sizes
       // get written to the stream.
-      if (compressor.getBytesRead() < compressor.getBytesWritten()) {
+      if (compressor.getBytesRead() <= compressor.getBytesWritten()) {
         // Compression actually increased the size of the buffer, so write the uncompressed bytes.
         byte[] uncompressed = ((LzoCompressor)compressor).uncompressedBytes();
         rawWriteInt(uncompressed.length);
