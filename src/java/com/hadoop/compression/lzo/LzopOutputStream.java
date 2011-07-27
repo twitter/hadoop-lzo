@@ -76,6 +76,12 @@ public class LzopOutputStream extends CompressorStream {
     }
   }
 
+  public LzopOutputStream(OutputStream out, Compressor compressor,
+          int bufferSize, LzoCompressor.CompressionStrategy strategy)
+  throws IOException {
+    this(out, null, compressor, bufferSize, strategy);
+  }
+
   public LzopOutputStream(OutputStream out, DataOutputStream indexOut,
       Compressor compressor, int bufferSize,
       LzoCompressor.CompressionStrategy strategy)

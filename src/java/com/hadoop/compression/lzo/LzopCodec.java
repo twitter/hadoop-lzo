@@ -57,7 +57,7 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public CompressionOutputStream createOutputStream(OutputStream out,
-      Compressor compressor) throws IOException {
+          Compressor compressor) throws IOException {
     return createIndexedOutputStream(out, null, compressor);
   }
 
