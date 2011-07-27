@@ -69,7 +69,7 @@ public class LzopCodec extends LzoCodec {
     LzoCompressor.CompressionStrategy strategy = LzoCompressor.CompressionStrategy.valueOf(
           getConf().get(LZO_COMPRESSOR_KEY, LzoCompressor.CompressionStrategy.LZO1X_1.name()));
     int bufferSize = getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
-    return new LzopIndexedOutputStream(out, indexOut, compressor, bufferSize, strategy);
+    return new LzopOutputStream(out, indexOut, compressor, bufferSize, strategy);
   }
 
   @Override
