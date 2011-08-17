@@ -43,6 +43,7 @@ public class LzopCodec extends LzoCodec {
   public static final int LZOP_VERSION = 0x1010;
   /** Latest verion of lzop this should be compatible with */
   public static final int LZOP_COMPAT_VERSION = 0x0940;
+  public static final String DEFAULT_LZO_EXTENSION = ".lzo";
 
   @Override
   public CompressionOutputStream createOutputStream(OutputStream out) throws IOException {
@@ -107,6 +108,6 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public String getDefaultExtension() {
-    return ".lzo";
+    return DEFAULT_LZO_EXTENSION;
   }
 }
