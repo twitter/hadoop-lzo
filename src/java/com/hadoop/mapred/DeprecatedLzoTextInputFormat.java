@@ -152,6 +152,7 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
       }
     }
 
+    LOG.info("DeprecatedLzoTextInputFormat: returning " + result.size() + " input splits!");
     return result.toArray(new FileSplit[result.size()]);
   }
 
