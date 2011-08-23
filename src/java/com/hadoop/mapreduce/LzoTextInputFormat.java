@@ -36,7 +36,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
@@ -53,17 +52,8 @@ import com.hadoop.compression.lzo.LzopCodec;
  * <code>lzo.text.input.format.ignore.nonlzo</code> and how it affects the
  * behavior of this input format.
  */
-public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
-  // We need to call TextInputFormat.isSplitable() but the method is protected, so we
-  // make a private subclass that exposes a public wrapper method. /puke.
-  private class WrappedTextInputFormat extends TextInputFormat {
-    public boolean isSplitableWrapper(JobContext context, Path file) {
-      return isSplitable(context, file);
-    }
-  }
-
+public class LzoTextInputFormat extends TextInputFormat {
   private final Map<Path, LzoIndex> indexes = new HashMap<Path, LzoIndex>();
-  private final WrappedTextInputFormat textInputFormat = new WrappedTextInputFormat();
 
   @Override
   protected List<FileStatus> listStatus(JobContext job) throws IOException {
@@ -101,8 +91,8 @@ public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
       LzoIndex index = indexes.get(filename);
       return !index.isEmpty();
     } else {
-      // Delegate non-LZO files to TextInputFormat.
-      return textInputFormat.isSplitableWrapper(context, filename);
+      // Delegate non-LZO files to the TextInputFormat base class.
+      return super.isSplitable(context, filename);
     }
   }
 
@@ -154,12 +144,13 @@ public class LzoTextInputFormat extends FileInputFormat<LongWritable, Text> {
 
   @Override
   public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
-      TaskAttemptContext taskAttempt) throws IOException, InterruptedException {
+      TaskAttemptContext taskAttempt) {
     FileSplit fileSplit = (FileSplit) split;
     if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
       return new LzoLineRecordReader();
     } else {
-      return textInputFormat.createRecordReader(split, taskAttempt);
+      // Delegate non-LZO files to the TextInputFormat base class.
+      return super.createRecordReader(split, taskAttempt);
     }
   }
 }
