@@ -31,7 +31,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -54,24 +53,19 @@ import com.hadoop.compression.lzo.LzopCodec;
  * com.hadoop.mapreduce.LzoTextInputFormat.  The classes attempt to be alike in
  * every other respect.
  *
+ * Note that to use this input format properly with hadoop-streaming, you should
+ * also set the property <code>stream.map.input.ignoreKey=true</code>. That will
+ * replicate the behavior of the default TextInputFormat by stripping off the byte
+ * offset keys from the input lines that get piped to the mapper process.
+ *
  * See {@link LzoInputFormatCommon} for a description of the boolean property
  * <code>lzo.text.input.format.ignore.nonlzo</code> and how it affects the
  * behavior of this input format.
 */
 
 @SuppressWarnings("deprecation")
-public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, Text>
-  implements JobConfigurable {
-  // We need to call TextInputFormat.isSplitable() but the method is protected, so we
-  // make a private subclass that exposes a public wrapper method. /puke.
-  private class WrappedTextInputFormat extends TextInputFormat {
-    public boolean isSplitableWrapper(FileSystem fs, Path file) {
-      return isSplitable(fs, file);
-    }
-  }
-
+public class DeprecatedLzoTextInputFormat extends TextInputFormat {
   private final Map<Path, LzoIndex> indexes = new HashMap<Path, LzoIndex>();
-  private final WrappedTextInputFormat textInputFormat = new WrappedTextInputFormat();
 
   @Override
   protected FileStatus[] listStatus(JobConf conf) throws IOException {
@@ -108,8 +102,8 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
       LzoIndex index = indexes.get(filename);
       return !index.isEmpty();
     } else {
-      // Delegate non-LZO files to TextInputFormat.
-      return textInputFormat.isSplitableWrapper(fs, filename);
+      // Delegate non-LZO files to the TextInputFormat base class.
+      return super.isSplitable(fs, filename);
     }
   }
 
@@ -152,7 +146,6 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
       }
     }
 
-    LOG.info("DeprecatedLzoTextInputFormat: returning " + result.size() + " input splits!");
     return result.toArray(new FileSplit[result.size()]);
   }
 
@@ -164,13 +157,8 @@ public class DeprecatedLzoTextInputFormat extends FileInputFormat<LongWritable, 
       reporter.setStatus(split.toString());
       return new DeprecatedLzoLineRecordReader(conf, (FileSplit)split);
     } else {
-      // delegate non-LZO files to TextInputFormat
-      return textInputFormat.getRecordReader(split, conf, reporter);
+      // delegate non-LZO files to the TextInputFormat base class.
+      return super.getRecordReader(split, conf, reporter);
     }
-  }
-
-  @Override
-  public void configure(JobConf conf) {
-    textInputFormat.configure(conf);
   }
 }
