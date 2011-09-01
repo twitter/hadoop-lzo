@@ -59,6 +59,13 @@ class LzoCompressor implements Compressor {
   private ByteBuffer workingMemoryBuf;      // The 'working memory' for lzo.
 
   /**
+   * Used when the user doesn't specify a configuration. We cache a single
+   * one statically, since loading the defaults is expensive.
+   */
+  private static Configuration defaultConfiguration =
+    new Configuration();
+
+  /**
    * The compression algorithm for lzo library.
    */
   public static enum CompressionStrategy {
@@ -199,7 +206,7 @@ class LzoCompressor implements Compressor {
     // and the new user of the codec doesn't specify a particular configuration
     // to CodecPool.getCompressor(). So we use the defaults.
     if (conf == null) {
-      conf = new Configuration();
+      conf = defaultConfiguration;
     }
     LzoCompressor.CompressionStrategy strategy = LzoCodec.getCompressionStrategy(conf);
     int bufferSize = LzoCodec.getBufferSize(conf);
