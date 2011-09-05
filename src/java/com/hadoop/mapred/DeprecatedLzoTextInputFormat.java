@@ -52,12 +52,12 @@ import com.hadoop.compression.lzo.LzopCodec;
  * com.hadoop.mapred.DeprecatedLzoTextInputFormat, not 
  * com.hadoop.mapreduce.LzoTextInputFormat.  The classes attempt to be alike in
  * every other respect.
- *
+ * <p>
  * Note that to use this input format properly with hadoop-streaming, you should
  * also set the property <code>stream.map.input.ignoreKey=true</code>. That will
  * replicate the behavior of the default TextInputFormat by stripping off the byte
  * offset keys from the input lines that get piped to the mapper process.
- *
+ * <p>
  * See {@link LzoInputFormatCommon} for a description of the boolean property
  * <code>lzo.text.input.format.ignore.nonlzo</code> and how it affects the
  * behavior of this input format.
