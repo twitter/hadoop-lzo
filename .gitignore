@@ -15,11 +15,13 @@
 
 *~
 .classpath
+.idea
 .project
 .settings
 .svn
 build/
 bin/
+out/
 *.ipr
 *.iml
 *.iws

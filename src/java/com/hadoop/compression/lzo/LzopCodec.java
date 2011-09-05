@@ -18,6 +18,7 @@
 
 package com.hadoop.compression.lzo;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,22 +43,34 @@ public class LzopCodec extends LzoCodec {
   public static final int LZOP_VERSION = 0x1010;
   /** Latest verion of lzop this should be compatible with */
   public static final int LZOP_COMPAT_VERSION = 0x0940;
+  public static final String DEFAULT_LZO_EXTENSION = ".lzo";
 
   @Override
   public CompressionOutputStream createOutputStream(OutputStream out) throws IOException {
     return createOutputStream(out, createCompressor());
   }
 
+  public CompressionOutputStream createIndexedOutputStream(OutputStream out,
+                                                           DataOutputStream indexOut)
+                                                           throws IOException {
+    return createIndexedOutputStream(out, indexOut, createCompressor());
+  }
+
   @Override
   public CompressionOutputStream createOutputStream(OutputStream out,
           Compressor compressor) throws IOException {
+    return createIndexedOutputStream(out, null, compressor);
+  }
+
+  public CompressionOutputStream createIndexedOutputStream(OutputStream out,
+        DataOutputStream indexOut, Compressor compressor) throws IOException {
     if (!isNativeLzoLoaded(getConf())) {
       throw new RuntimeException("native-lzo library not available");
     }
     LzoCompressor.CompressionStrategy strategy = LzoCompressor.CompressionStrategy.valueOf(
           getConf().get(LZO_COMPRESSOR_KEY, LzoCompressor.CompressionStrategy.LZO1X_1.name()));
     int bufferSize = getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
-    return new LzopOutputStream(out, compressor, bufferSize, strategy);
+    return new LzopOutputStream(out, indexOut, compressor, bufferSize, strategy);
   }
 
   @Override
@@ -95,6 +108,6 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public String getDefaultExtension() {
-    return ".lzo";
+    return DEFAULT_LZO_EXTENSION;
   }
 }
