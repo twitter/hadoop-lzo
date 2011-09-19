@@ -32,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.compress.BlockDecompressorStream;
 import org.apache.hadoop.io.compress.Decompressor;
-import org.apache.hadoop.io.IOUtils;
 
 public class LzopInputStream extends BlockDecompressorStream {
 
@@ -220,9 +219,11 @@ public class LzopInputStream extends BlockDecompressorStream {
         throw new IOException("Corrupted uncompressed block");
       }
     }
-    for (Map.Entry<CChecksum,Integer> chk : ccheck.entrySet()) {
-      if (!ldecompressor.verifyCChecksum(chk.getKey(), chk.getValue())) {
-        throw new IOException("Corrupted compressed block");
+    if (!ldecompressor.isCurrentBlockUncompressed()) {
+      for (Map.Entry<CChecksum,Integer> chk : ccheck.entrySet()) {
+        if (!ldecompressor.verifyCChecksum(chk.getKey(), chk.getValue())) {
+          throw new IOException("Corrupted compressed block");
+        }
       }
     }
   }
@@ -258,7 +259,7 @@ public class LzopInputStream extends BlockDecompressorStream {
           return -1;
         } catch (IOException e) {
           LOG.warn("IOException in getCompressedData; likely LZO corruption.", e);
-          return -1;
+          throw e;
         }
       }
     }
