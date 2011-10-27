@@ -247,6 +247,7 @@
     <exec dir="${build.native}" executable="sh" failonerror="true">
        <env key="OS_NAME" value="${os.name}"/>
        <env key="OS_ARCH" value="${os.arch}"/>
+       <env key="LDFLAGS" value="-Wl,--no-as-needed"/>
        <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}"/>
        <env key="NATIVE_SRCDIR" value="${native.src.dir}"/>
        <arg line="${native.src.dir}/configure"/>
