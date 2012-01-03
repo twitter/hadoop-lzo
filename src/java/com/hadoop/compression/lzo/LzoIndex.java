@@ -20,7 +20,9 @@ package com.hadoop.compression.lzo;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -166,17 +168,29 @@ public class LzoIndex {
     FSDataInputStream indexIn = null;
     try {
       Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
-      if (!fs.exists(indexFile)) {
+
+      try {
+        indexIn = fs.open(indexFile);
+      } catch (IOException fileNotFound) {
         // return empty index, fall back to the unsplittable mode
         return new LzoIndex();
       }
 
-      long indexLen = fs.getFileStatus(indexFile).getLen();
-      int blocks = (int) (indexLen / 8);
-      LzoIndex index = new LzoIndex(blocks);
-      indexIn = fs.open(indexFile);
-      for (int i = 0; i < blocks; i++) {
-        index.set(i, indexIn.readLong());
+      int capacity = 16 * 1024; //number of 256KB lzo blocks in a 4GB file
+      List<Long> blocks = new ArrayList<Long>(capacity);
+
+      // read until EOF
+      while (true) {
+        try {
+          blocks.add(indexIn.readLong());
+        } catch (EOFException e) {
+          break;
+        }
+      }
+
+      LzoIndex index = new LzoIndex(blocks.size());
+      for (int i = 0; i < blocks.size(); i++) {
+        index.set(i, blocks.get(i));
       }
       return index;
     } finally {
