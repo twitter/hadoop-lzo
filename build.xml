@@ -113,6 +113,11 @@
   <property name="ivy.publish.pattern" value="hadoop-[revision]-core.[ext]"/>
   <property name="jar.name" location="${build.dir}/${final.name}.jar" />
 
+   <!-- set -no-as-needed for gnu ld -->
+   <condition property="native.ldflags" value="" else="-Wl,--no-as-needed">
+     <os family="mac"/>
+   </condition>
+
   <!-- the normal classpath -->
   <path id="classpath">
     <pathelement location="${build.classes}"/>
@@ -247,7 +252,7 @@
     <exec dir="${build.native}" executable="sh" failonerror="true">
        <env key="OS_NAME" value="${os.name}"/>
        <env key="OS_ARCH" value="${os.arch}"/>
-       <env key="LDFLAGS" value="-Wl,--no-as-needed"/>
+       <env key="LDFLAGS" value="${native.ldflags}"/>
        <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}"/>
        <env key="NATIVE_SRCDIR" value="${native.src.dir}"/>
        <arg line="${native.src.dir}/configure"/>
