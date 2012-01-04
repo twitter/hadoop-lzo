@@ -20,9 +20,8 @@ package com.hadoop.compression.lzo;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -30,6 +29,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 
@@ -166,38 +167,30 @@ public class LzoIndex {
    */
   public static LzoIndex readIndex(FileSystem fs, Path lzoFile) throws IOException {
     FSDataInputStream indexIn = null;
+    Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
+
     try {
-      Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
-
-      try {
-        indexIn = fs.open(indexFile);
-      } catch (IOException fileNotFound) {
-        // return empty index, fall back to the unsplittable mode
-        return new LzoIndex();
-      }
-
-      int capacity = 16 * 1024; //number of 256KB lzo blocks in a 4GB file
-      List<Long> blocks = new ArrayList<Long>(capacity);
-
-      // read until EOF
-      while (true) {
-        try {
-          blocks.add(indexIn.readLong());
-        } catch (EOFException e) {
-          break;
-        }
-      }
-
-      LzoIndex index = new LzoIndex(blocks.size());
-      for (int i = 0; i < blocks.size(); i++) {
-        index.set(i, blocks.get(i));
-      }
-      return index;
-    } finally {
-      if (indexIn != null) {
-        indexIn.close();
-      }
+      indexIn = fs.open(indexFile);
+    } catch (IOException fileNotFound) {
+      // return empty index, fall back to the unsplittable mode
+      return new LzoIndex();
     }
+
+    int capacity = 16 * 1024 * 8; //size for a 4GB file (with 256KB lzo blocks)
+    DataOutputBuffer bytes = new DataOutputBuffer(capacity);
+
+    // copy indexIn and close it
+    IOUtils.copyBytes(indexIn, bytes, 4*1024, true);
+
+    ByteBuffer bytesIn = ByteBuffer.wrap(bytes.getData(), 0, bytes.getLength());
+    int blocks = bytesIn.remaining()/8;
+    LzoIndex index = new LzoIndex(blocks);
+
+    for (int i = 0; i < blocks; i++) {
+      index.set(i, bytesIn.getLong());
+    }
+
+    return index;
   }
 
   /**
