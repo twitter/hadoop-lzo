@@ -23,7 +23,10 @@ import org.apache.hadoop.conf.Configuration;
 import com.hadoop.compression.lzo.LzoIndexer;
 import com.hadoop.compression.lzo.LzopCodec;
 
-public class LzoInputFormatCommon {
+/**
+ * Utilities used by the two LzoInputFormat implementations.
+ */
+public abstract class LzoInputFormatCommon {
   /**
    * The boolean property <code>lzo.text.input.format.ignore.nonlzo</code> tells
    * the LZO text input format whether it should silently ignore non-LZO input

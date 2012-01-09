@@ -47,7 +47,7 @@ import com.hadoop.compression.lzo.LzopCodec;
  * An {@link InputFormat} for lzop compressed text files. Files are broken into
  * lines. Either linefeed or carriage-return are used to signal end of line.
  * Keys are the position in the file, and values are the line of text.
- *
+ * <p>
  * See {@link LzoInputFormatCommon} for a description of the boolean property
  * <code>lzo.text.input.format.ignore.nonlzo</code> and how it affects the
  * behavior of this input format.
