@@ -19,7 +19,8 @@
 -->
 
 <project name="Hadoop-GPL-Compression" default="compile"
-   xmlns:ivy="antlib:org.apache.ivy.ant"> 
+   xmlns:ivy="antlib:org.apache.ivy.ant"
+   xmlns:artifact="urn:maven-artifact-ant"> 
 
   <!-- Load all the default properties, and any the user wants    -->
   <!-- to contribute (without having to type -D or edit this file -->
@@ -110,8 +111,14 @@
   <property name="ivy.artifact.retrieve.pattern" value="${ant.project.name}/[conf]/[artifact]-[revision].[ext]"/>
 
   <!--this is how artifacts that get built are named-->
-  <property name="ivy.publish.pattern" value="hadoop-[revision]-core.[ext]"/>
+  <property name="ivy.publish.pattern" value="${name}-[revision].[ext]"/>
   <property name="jar.name" location="${build.dir}/${final.name}.jar" />
+  <property name="tsk.org" value="/org/apache/maven/maven-ant-tasks/"/>
+  <property name="ant_task.jar" 
+    location="${ivy.dir}/maven-ant-tasks-${ant-task.version}.jar"/>
+  <property name="mvnrepo" value="http://repo2.maven.org/maven2"/>
+  <property name="ant_task_repo_url"
+    value="${mvnrepo}${tsk.org}${ant-task.version}/maven-ant-tasks-${ant-task.version}.jar"/>
 
    <!-- set -no-as-needed for gnu ld -->
    <condition property="native.ldflags" value="" else="-Wl,--no-as-needed">
@@ -152,6 +159,10 @@
     <pathelement location="${build.dir}"/>
   </path>
 
+  <!-- ivy settings -->
+
+ <!-- <ivy:settings file="ivysettings.xml" /> -->
+
   <!-- properties dependent on the items defined above. -->
   <!--<available classname="${rat.reporting.classname}" classpathref="classpath" property="rat.present" value="true"/> -->
 
@@ -168,6 +179,17 @@
       </tar>
     </sequential>
   </macrodef>
+
+  <target name="ant-task-download" description="To download mvn-ant-task">
+    <get src="${ant_task_repo_url}" dest="${ant_task.jar}" usetimestamp="true"/>
+  </target>
+
+  <target name="mvn-taskdef" depends="ant-task-download">
+     <path id="mvn-ant-task.classpath" path="${ant_task.jar}"/>
+     <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+         uri="urn:maven-artifact-ant"
+         classpathref="mvn-ant-task.classpath"/>
+  </target>  
 
   <!-- ====================================================== -->
   <!-- Stuff needed by all targets                            -->
@@ -592,7 +614,7 @@
     <ivy:publish
       settingsRef="${ant.project.name}.ivy.settings"
       resolver="local"
-      pubrevision="${hadoop.version}"
+      pubrevision="${version}"
       overwrite="true"
       artifactspattern="${build.dir}/${ivy.publish.pattern}" />
   </target>
@@ -604,7 +626,7 @@
   <target name="makepom" depends="ivy-resolve">
     <ivy:makepom settingsRef="${ant.project.name}.ivy.settings"
       ivyfile="ivy.xml"
-      pomfile="${build.ivy.maven.dir}/generated.pom">
+      pomfile="${build.ivy.maven.dir}/${final.name}.pom">
       <ivy:mapping conf="default" scope="default"/>
       <ivy:mapping conf="master" scope="master"/>
       <ivy:mapping conf="runtime" scope="runtime"/>
@@ -613,12 +635,12 @@
 
 
   <target name="copy-jar-to-maven" depends="ready-to-publish">
-    <copy file="${hadoop.jar}"
-      tofile="${build.ivy.maven.jar}"/>
-    <checksum file="${build.ivy.maven.jar}" algorithm="md5"/>
+    <copy file="${jar.name}"
+      tofile="${build.ivy.maven.dir}/${final.name}.jar"/>
+    <checksum file="${build.ivy.maven.dir}/${final.name}.jar" algorithm="md5"/>
   </target>
 
-  <target name="copypom" depends="ivy-init-dirs">
+  <target name="copypom" depends="ivy-init-dirs,makepom">
 
    <presetdef name="expandingcopy" >
     <copy overwrite="true">
@@ -628,15 +650,18 @@
     </copy>
    </presetdef>
 
-   <expandingcopy file="ivy/hadoop-core.pom"
+   <expandingcopy file="${build.ivy.maven.dir}/${final.name}.pom"
       tofile="${build.ivy.maven.pom}"/>
    <checksum file="${build.ivy.maven.pom}" algorithm="md5"/>
   </target>
 
   <target name="maven-artifacts" depends="copy-jar-to-maven,copypom" />
 
-  <target name="published" depends="ivy-publish-local,maven-artifacts">
-
+  <target name="published" depends="mvn-taskdef,ivy-publish-local,maven-artifacts">
+     <artifact:pom file="${build.ivy.maven.pom}" id="hadoop.lzo.mvn.install"/>
+     <artifact:install file="${build.ivy.maven.dir}/${final.name}.jar">
+        <pom refid="hadoop.lzo.mvn.install"/>
+     </artifact:install>
   </target>
 
 </project>
