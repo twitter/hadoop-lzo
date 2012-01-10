@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <ivy-module version="1.0">
-  <info organisation="com.hadoop.gplcompression" module="${ant.project.name}">
+  <info organisation="com.hadoop.gplcompression" module="${ant.project.name}" revision="${version}">
     <license name="GPL 3.0"/>
     <ivyauthor name="Hadoop GPL Compression Team" 
                url="http://code.google.com/p/hadoop-gpl-compression/"/>
