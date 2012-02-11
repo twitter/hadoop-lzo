@@ -183,15 +183,7 @@ public class LzoIndex {
     LzoIndexSerde serde = null;
     for (Class<? extends LzoIndexSerde> candidateClass : serdeClasses) {
       LzoIndexSerde candidate = null;
-      try {
-        candidate = candidateClass.newInstance();
-      } catch (InstantiationException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      } catch (IllegalAccessException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+      candidate = quietGetInstance(candidateClass);
       if (candidate.accepts(firstLong)) {
         serde = candidate;
         break;
@@ -292,6 +284,18 @@ public class LzoIndex {
         fs.rename(tmpOutputFile, outputFile);
       }
     }
+  }
+
+  private static LzoIndexSerde quietGetInstance(Class<? extends LzoIndexSerde> klass) throws IOException {
+    LzoIndexSerde instance = null;
+    try {
+      instance = klass.newInstance();
+    } catch (InstantiationException e) {
+      throw new IOException(e);
+    } catch (IllegalAccessException e) {
+      throw new IOException(e);
+    }
+    return instance;
   }
 }
 
