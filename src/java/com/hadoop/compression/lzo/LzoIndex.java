@@ -230,6 +230,8 @@ public class LzoIndex {
 
     FSDataInputStream is = null;
     FSDataOutputStream os = null;
+    LzoIndexSerde writer = new LzoBasicIndexSerde();
+
     Path outputFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
     Path tmpOutputFile = lzoFile.suffix(LZO_TMP_INDEX_SUFFIX);
 
@@ -239,7 +241,6 @@ public class LzoIndex {
     try {
       is = fs.open(lzoFile);
       os = fs.create(tmpOutputFile);
-      LzoIndexSerde writer = new LzoBasicIndexSerde();
       writer.prepareToWrite(os);
       LzopDecompressor decompressor = (LzopDecompressor) codec.createDecompressor();
       // Solely for reading the header
@@ -278,7 +279,7 @@ public class LzoIndex {
       if (is != null) {
         is.close();
       }
-
+      writer.finishWriting();
       if (os != null) {
         os.close();
       }
