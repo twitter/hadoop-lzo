@@ -20,7 +20,7 @@ package com.hadoop.compression.lzo;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configurable;
@@ -29,8 +29,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 
@@ -43,6 +41,12 @@ public class LzoIndex {
   public static final long NOT_FOUND = -1;
 
   private long[] blockPositions_;
+
+  private static ArrayList<Class<? extends LzoIndexSerde>> serdeClasses =
+      new ArrayList<Class<? extends LzoIndexSerde>>();
+  static {
+    serdeClasses.add(LzoBasicIndexSerde.class);
+  }
 
   /**
    * Create an empty index, typically indicating no index file exists.
@@ -175,21 +179,30 @@ public class LzoIndex {
       // return empty index, fall back to the unsplittable mode
       return new LzoIndex();
     }
-
-    int capacity = 16 * 1024 * 8; //size for a 4GB file (with 256KB lzo blocks)
-    DataOutputBuffer bytes = new DataOutputBuffer(capacity);
-
-    // copy indexIn and close it
-    IOUtils.copyBytes(indexIn, bytes, 4*1024, true);
-
-    ByteBuffer bytesIn = ByteBuffer.wrap(bytes.getData(), 0, bytes.getLength());
-    int blocks = bytesIn.remaining()/8;
-    LzoIndex index = new LzoIndex(blocks);
-
-    for (int i = 0; i < blocks; i++) {
-      index.set(i, bytesIn.getLong());
+    long firstLong = indexIn.readLong();
+    LzoIndexSerde serde = null;
+    for (Class<? extends LzoIndexSerde> candidateClass : serdeClasses) {
+      LzoIndexSerde candidate = null;
+      try {
+        candidate = candidateClass.newInstance();
+      } catch (InstantiationException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      } catch (IllegalAccessException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      if (candidate.accepts(firstLong)) {
+        serde = candidate;
+        break;
+      }
     }
-
+    serde.prepareToRead(indexIn);
+    int idx = 0;
+    LzoIndex index = new LzoIndex(serde.numBlocks());
+    while (serde.hasNext()) {
+      index.set(idx++, serde.next());
+    }
     return index;
   }
 
@@ -226,6 +239,8 @@ public class LzoIndex {
     try {
       is = fs.open(lzoFile);
       os = fs.create(tmpOutputFile);
+      LzoIndexSerde writer = new LzoBasicIndexSerde();
+      writer.prepareToWrite(os);
       LzopDecompressor decompressor = (LzopDecompressor) codec.createDecompressor();
       // Solely for reading the header
       codec.createInputStream(is, decompressor);
@@ -252,7 +267,7 @@ public class LzoIndex {
             numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
         long pos = is.getPos();
         // write the pos of the block start
-        os.writeLong(pos - 8);
+        writer.writeOffset(pos - 8);
         // seek to the start of the next block, skip any checksums
         is.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
       }
