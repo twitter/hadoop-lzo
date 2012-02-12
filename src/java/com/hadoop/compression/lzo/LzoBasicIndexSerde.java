@@ -39,7 +39,6 @@ public class LzoBasicIndexSerde implements LzoIndexSerde {
     this.is = is;
     bytesIn = fillBuffer();
     numBlocks = bytesIn.remaining()/8 + 1; // plus one for the first long.
-    nextCalls = 0;
     processedFirstLong = false;
   }
 
@@ -53,7 +52,6 @@ public class LzoBasicIndexSerde implements LzoIndexSerde {
     os.close();
   }
 
-  int nextCalls = 0;
   @Override
   public boolean hasNext() throws IOException {
    return !processedFirstLong || (bytesIn != null && bytesIn.hasRemaining());

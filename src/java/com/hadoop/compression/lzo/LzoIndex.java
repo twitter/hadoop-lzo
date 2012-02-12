@@ -46,6 +46,7 @@ public class LzoIndex {
       new ArrayList<Class<? extends LzoIndexSerde>>();
   static {
     serdeClasses.add(LzoBasicIndexSerde.class);
+    serdeClasses.add(LzoTinyOffsetsSerde.class);
   }
 
   /**
@@ -190,10 +191,9 @@ public class LzoIndex {
       }
     }
     serde.prepareToRead(indexIn);
-    int idx = 0;
     LzoIndex index = new LzoIndex(serde.numBlocks());
-    while (serde.hasNext()) {
-      index.set(idx++, serde.next());
+    for (int i = 0; i < serde.numBlocks(); i++) {
+      index.set(i, serde.next());
     }
     return index;
   }
@@ -222,7 +222,7 @@ public class LzoIndex {
 
     FSDataInputStream is = null;
     FSDataOutputStream os = null;
-    LzoIndexSerde writer = new LzoBasicIndexSerde();
+    LzoIndexSerde writer = new LzoTinyOffsetsSerde();
 
     Path outputFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
     Path tmpOutputFile = lzoFile.suffix(LZO_TMP_INDEX_SUFFIX);
