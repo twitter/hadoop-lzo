@@ -58,15 +58,10 @@ public interface LzoIndexSerde {
 
   public void finishWriting() throws IOException;
 
+  public void finishReading() throws IOException;
+
   public boolean hasNext() throws IOException;
 
   public long next() throws IOException;
-
-  /**
-   * Get the number of block expected to be read from this index.
-   * Will only be called after prepareToRead().
-   * @return number of block offsets that will be read back.
-   */
-  public int numBlocks();
 
 }

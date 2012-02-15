@@ -96,8 +96,8 @@ public class LzoBasicIndexSerde implements LzoIndexSerde {
   }
 
   @Override
-  public int numBlocks() {
-    return numBlocks;
+  public void finishReading() throws IOException {
+    is.close();
   }
 
 }

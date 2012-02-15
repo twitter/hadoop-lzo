@@ -191,9 +191,17 @@ public class LzoIndex {
       }
     }
     serde.prepareToRead(indexIn);
-    LzoIndex index = new LzoIndex(serde.numBlocks());
-    for (int i = 0; i < serde.numBlocks(); i++) {
-      index.set(i, serde.next());
+    // Sized for at least 1 256MB HDFS block with 256KB Lzo blocks.
+    // if it's less than that, you shouldn't bother indexing anyway.
+    ArrayList<Long> offsets = new ArrayList<Long>(1024);
+    while (serde.hasNext()) {
+      offsets.add(serde.next());
+    }
+    serde.finishReading();
+
+    LzoIndex index = new LzoIndex(offsets.size());
+    for (int i = 0; i < offsets.size(); i++) {
+      index.set(i, offsets.get(i));
     }
     return index;
   }

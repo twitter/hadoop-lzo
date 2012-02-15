@@ -20,11 +20,8 @@ package com.hadoop.compression.lzo;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.IOUtils;
 
 /**
  * The index is stored as follows:
@@ -37,12 +34,8 @@ import org.apache.hadoop.io.IOUtils;
  */
 public class LzoTinyOffsetsSerde implements LzoIndexSerde {
 
-  private static final int BUFFER_CAPACITY = 16 * 1024 * 8; //size for a 4GB file (with 256KB lzo blocks)
-
   private DataOutputStream os;
   private DataInputStream is;
-  private ByteBuffer bytesIn;
-  private int numBlocks = 0;
 
   private boolean readFirstLong = false;
   private int firstBlockSize;
@@ -51,6 +44,10 @@ public class LzoTinyOffsetsSerde implements LzoIndexSerde {
   private boolean readInitialOffset = false;
   private boolean wroteInitialOffset = false;
   private long currOffset = 0;
+
+  // for hasNext, we have to read the next value
+  // (or, if the buffer hasn't been used, just check it for null)
+  private Integer bufferedOffset = null;
 
   private static final int VERSION = (1 << 31) + 1;
 
@@ -75,11 +72,6 @@ public class LzoTinyOffsetsSerde implements LzoIndexSerde {
   @Override
   public void prepareToRead(DataInputStream is) throws IOException {
     this.is = is;
-    bytesIn = fillBuffer();
-    int remaining = bytesIn.remaining();
-    numBlocks = (remaining == 0) ? 1 :
-      (remaining == 4) ? 2 :
-        (bytesIn.remaining() - 4) / 2 + 2; // plus one for the first offset, plus one for block.
     readFirstLong = false;
     readInitialOffset = false;
   }
@@ -95,7 +87,8 @@ public class LzoTinyOffsetsSerde implements LzoIndexSerde {
       os.writeInt(firstBlockSize);
       wroteFirstBlock = true;
     } else {
-      os.writeShort((short) ( (offset - currOffset) - firstBlockSize));
+      int delta = ((int) (offset - currOffset)) - firstBlockSize;
+      Varint.writeSignedVarInt(delta, os);
     }
     currOffset = offset;
 
@@ -107,8 +100,24 @@ public class LzoTinyOffsetsSerde implements LzoIndexSerde {
   }
 
   @Override
+  public void finishReading() throws IOException {
+    is.close();
+  }
+
+  @Override
   public boolean hasNext() throws IOException {
-   return !readInitialOffset || !readFirstLong || (bytesIn != null && bytesIn.hasRemaining());
+    if (readInitialOffset && readFirstLong) {
+      if (bufferedOffset == null) {
+        // try to read something. If we hit EOF, we are done.
+        try {
+          bufferedOffset = Varint.readSignedVarInt(is);
+        } catch (EOFException e) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return !readInitialOffset || (!readFirstLong && is.available() != 0);
   }
 
   @Override
@@ -117,26 +126,16 @@ public class LzoTinyOffsetsSerde implements LzoIndexSerde {
       readInitialOffset = true;
     } else if (!readFirstLong) {
       readFirstLong = true;
-      firstBlockSize = bytesIn.getInt();
+      firstBlockSize = is.readInt();
       currOffset += firstBlockSize;
-    } else if (bytesIn != null && bytesIn.hasRemaining()) {
-      currOffset += firstBlockSize + bytesIn.getShort();
     } else {
-      throw new IOException("Attempt to read past the edge of the index.");
+      if (bufferedOffset == null) {
+        bufferedOffset = Varint.readSignedVarInt(is);
+      }
+      currOffset += firstBlockSize + bufferedOffset;
+      bufferedOffset = null;
     }
     return currOffset;
-  }
-
-  private ByteBuffer fillBuffer() throws IOException {
-    DataOutputBuffer bytes = new DataOutputBuffer(BUFFER_CAPACITY);
-    // copy indexIn and close it if finished
-    IOUtils.copyBytes(is, bytes, 4*1024, true);
-    return ByteBuffer.wrap(bytes.getData(), 0, bytes.getLength());
-  }
-
-  @Override
-  public int numBlocks() {
-    return numBlocks;
   }
 
 }

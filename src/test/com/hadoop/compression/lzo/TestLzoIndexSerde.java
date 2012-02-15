@@ -59,7 +59,6 @@ public class TestLzoIndexSerde extends TestCase {
    long firstLong = is.readLong();
    assertTrue("Serde does not accept its own first long", serde.accepts(firstLong));
    serde.prepareToRead(is);
-   assertEquals("Serde reports different number of blocks than expected", expected.length, serde.numBlocks());
    for (long val : expected) {
      assertTrue("Serde does not return as many values as were written", serde.hasNext());
      assertEquals("Serde returned wrong offset", val, serde.next());
