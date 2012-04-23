@@ -31,6 +31,7 @@ import java.util.zip.CRC32;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.compress.BlockDecompressorStream;
+import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.Decompressor;
 
 public class LzopInputStream extends BlockDecompressorStream {
@@ -47,11 +48,18 @@ public class LzopInputStream extends BlockDecompressorStream {
   private int noUncompressedBytes = 0;
   private int noCompressedBytes = 0;
   private int uncompressedBlockSize = 0;
+  private boolean reuseDecompressor;
 
   public LzopInputStream(InputStream in, Decompressor decompressor,
       int bufferSize) throws IOException {
+    this(in, decompressor, bufferSize, false);
+  }
+
+
+  public LzopInputStream(InputStream in, Decompressor decompressor, int bufferSize, boolean reuseDecompressor) throws IOException {
     super(in, decompressor, bufferSize);
     readHeader(in);
+    this.reuseDecompressor = reuseDecompressor;
   }
 
 
@@ -83,7 +91,7 @@ public class LzopInputStream extends BlockDecompressorStream {
    * Read len bytes into buf, st LSB of int returned is the last byte of the
    * first word read.
    */
-  private static int readInt(InputStream in, byte[] buf, int len) 
+  private static int readInt(InputStream in, byte[] buf, int len)
   throws IOException {
     readFully(in, buf, 0, len);
     int ret = (0xFF & buf[0]) << 24;
@@ -331,6 +339,8 @@ public class LzopInputStream extends BlockDecompressorStream {
       decompressor.decompress(b, 0, b.length);
     }
     super.close();
+    if(reuseDecompressor)
+      CodecPool.returnDecompressor(decompressor);
     try {
       verifyChecksums();
     } catch (IOException e) {
