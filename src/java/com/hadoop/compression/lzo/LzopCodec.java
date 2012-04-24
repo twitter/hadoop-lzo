@@ -87,14 +87,9 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public CompressionInputStream createInputStream(InputStream in) throws IOException {
-    // Ensure native-lzo library is loaded & initialized
-    if (!isNativeLzoLoaded(getConf())) {
-      throw new RuntimeException("native-lzo library not available");
-    }
-    /*create a decompressor and tell LzoInputStream to reuse it
+       /*create a decompressor and tell LzoInputStream to reuse it
     * (return it to the pool when LzoInputStream is closed.
     */
-
     return new LzopInputStream(in, CodecPool.getDecompressor(this),
             getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE), true);
   }
