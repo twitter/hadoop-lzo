@@ -87,7 +87,7 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public CompressionInputStream createInputStream(InputStream in) throws IOException {
-       /*create a decompressor and tell LzoInputStream to reuse it
+   /* create a decompressor and tell LzoInputStream to reuse it
     * (return it to the pool when LzoInputStream is closed.
     */
     return new LzopInputStream(in, CodecPool.getDecompressor(this),
