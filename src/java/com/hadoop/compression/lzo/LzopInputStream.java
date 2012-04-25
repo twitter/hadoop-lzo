@@ -48,20 +48,12 @@ public class LzopInputStream extends BlockDecompressorStream {
   private int noUncompressedBytes = 0;
   private int noCompressedBytes = 0;
   private int uncompressedBlockSize = 0;
-  private boolean reuseDecompressor;
 
   public LzopInputStream(InputStream in, Decompressor decompressor,
       int bufferSize) throws IOException {
-    this(in, decompressor, bufferSize, false);
-  }
-
-
-  public LzopInputStream(InputStream in, Decompressor decompressor, int bufferSize, boolean reuseDecompressor) throws IOException {
     super(in, decompressor, bufferSize);
     readHeader(in);
-    this.reuseDecompressor = reuseDecompressor;
   }
-
 
   /**
    * Reads len bytes in a loop.
@@ -346,8 +338,8 @@ public class LzopInputStream extends BlockDecompressorStream {
       // the file didn't.  It's not critical, though, so log and eat it in this case.
       LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.", e);
     } finally{
-      if(reuseDecompressor)
-        CodecPool.returnDecompressor(decompressor);
+      //return the decompressor to the pool, the function itself handles null.
+      CodecPool.returnDecompressor(decompressor);
     }
   }
 }

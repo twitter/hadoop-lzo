@@ -48,13 +48,17 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public CompressionOutputStream createOutputStream(OutputStream out) throws IOException {
-    return createOutputStream(out, createCompressor());
+    //get a compressor which will be returned to the pool when the output stream
+    //is closed.
+    return createOutputStream(out, CodecPool.getCompressor(this, getConf()));
   }
 
   public CompressionOutputStream createIndexedOutputStream(OutputStream out,
                                                            DataOutputStream indexOut)
                                                            throws IOException {
-    return createIndexedOutputStream(out, indexOut, createCompressor());
+    //get a compressor which will be returned to the pool when the output stream
+    //is closed.
+    return createIndexedOutputStream(out, indexOut,CodecPool.getCompressor(this, getConf()));
   }
 
   @Override
@@ -87,11 +91,9 @@ public class LzopCodec extends LzoCodec {
 
   @Override
   public CompressionInputStream createInputStream(InputStream in) throws IOException {
-   /* create a decompressor and tell LzoInputStream to reuse it
-    * (return it to the pool when LzoInputStream is closed).
-    */
-    return new LzopInputStream(in, CodecPool.getDecompressor(this),
-            getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE), true);
+    // get a decompressor from a pool which will be returned to the pool
+    // when LzoInputStream is closed
+    return createInputStream(in, CodecPool.getDecompressor(this));
   }
 
   @Override
