@@ -58,7 +58,7 @@ public class LzopCodec extends LzoCodec {
                                                            throws IOException {
     //get a compressor which will be returned to the pool when the output stream
     //is closed.
-    return createIndexedOutputStream(out, indexOut,CodecPool.getCompressor(this, getConf()));
+    return createIndexedOutputStream(out, indexOut, CodecPool.getCompressor(this, getConf()));
   }
 
   @Override
