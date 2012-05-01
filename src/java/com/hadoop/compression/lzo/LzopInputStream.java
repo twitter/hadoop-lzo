@@ -31,6 +31,7 @@ import java.util.zip.CRC32;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.compress.BlockDecompressorStream;
+import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.Decompressor;
 
 public class LzopInputStream extends BlockDecompressorStream {
@@ -53,7 +54,6 @@ public class LzopInputStream extends BlockDecompressorStream {
     super(in, decompressor, bufferSize);
     readHeader(in);
   }
-
 
   /**
    * Reads len bytes in a loop.
@@ -83,7 +83,7 @@ public class LzopInputStream extends BlockDecompressorStream {
    * Read len bytes into buf, st LSB of int returned is the last byte of the
    * first word read.
    */
-  private static int readInt(InputStream in, byte[] buf, int len) 
+  private static int readInt(InputStream in, byte[] buf, int len)
   throws IOException {
     readFully(in, buf, 0, len);
     int ret = (0xFF & buf[0]) << 24;
@@ -337,6 +337,9 @@ public class LzopInputStream extends BlockDecompressorStream {
       // LZO requires that each file ends with 4 trailing zeroes.  If we are here,
       // the file didn't.  It's not critical, though, so log and eat it in this case.
       LOG.warn("Incorrect LZO file format: file did not end with four trailing zeroes.", e);
+    } finally{
+      //return the decompressor to the pool, the function itself handles null.
+      CodecPool.returnDecompressor(decompressor);
     }
   }
 }
