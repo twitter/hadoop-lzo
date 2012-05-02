@@ -29,7 +29,7 @@
  
   <property name="Name" value="Hadoop GPL Compression"/>
   <property name="name" value="hadoop-lzo"/>
-  <property name="version" value="0.4.15"/>
+  <property name="version" value="0.4.16"/>
   <property name="final.name" value="${name}-${version}"/>
   <property name="year" value="2011"/>
 
