@@ -21,6 +21,7 @@ package com.hadoop.mapreduce;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -31,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -41,11 +43,13 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import com.hadoop.compression.lzo.GPLNativeCodeLoader;
 import com.hadoop.compression.lzo.LzoIndex;
+import com.hadoop.compression.lzo.LzoInputFormatCommon;
 import com.hadoop.compression.lzo.LzopCodec;
 
 /**
@@ -156,7 +160,7 @@ public class TestLzoTextInputFormat extends TestCase {
     localFs.delete(outputDir, true);
     localFs.mkdirs(outputDir);
 
-    Job job = new Job(conf);     
+    Job job = new Job(conf);
     TextOutputFormat.setCompressOutput(job, true);
     TextOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
     TextOutputFormat.setOutputPath(job, outputDir);
@@ -263,4 +267,118 @@ public class TestLzoTextInputFormat extends TestCase {
     return stringLength;
   }
 
+  public void testIgnoreNonLzoTrue()
+      throws IOException, InterruptedException, NoSuchAlgorithmException {
+    runTestIgnoreNonLzo(true, OUTPUT_BIG, true);
+    runTestIgnoreNonLzo(true, OUTPUT_SMALL, true);
+    runTestIgnoreNonLzo(false, OUTPUT_BIG, true);
+    runTestIgnoreNonLzo(false, OUTPUT_SMALL, true);
+  }
+
+  public void testIgnoreNonLzoFalse()
+      throws IOException, InterruptedException, NoSuchAlgorithmException {
+    runTestIgnoreNonLzo(true, OUTPUT_BIG, false);
+    runTestIgnoreNonLzo(true, OUTPUT_SMALL, false);
+    runTestIgnoreNonLzo(false, OUTPUT_BIG, false);
+    runTestIgnoreNonLzo(false, OUTPUT_SMALL, false);
+  }
+
+  private void runTestIgnoreNonLzo(boolean testWithIndex, int charsToOutput,
+    boolean ignoreNonLzo) throws IOException, InterruptedException, NoSuchAlgorithmException {
+    if (!GPLNativeCodeLoader.isNativeCodeLoaded()) {
+      LOG.warn("Cannot run this test without the native lzo libraries");
+      return;
+    }
+
+    Configuration conf = new Configuration();
+    conf.setLong("fs.local.block.size", charsToOutput / 2);
+    // reducing block size to force a split of the tiny file
+    conf.set("io.compression.codecs", LzopCodec.class.getName());
+    conf.setBoolean(LzoInputFormatCommon.IGNORE_NONLZO_KEY, ignoreNonLzo);
+
+    FileSystem localFs = FileSystem.getLocal(conf);
+    localFs.delete(outputDir, true);
+    localFs.mkdirs(outputDir);
+
+    // Create a non-LZO input file and put it alongside the LZO files.
+    Path nonLzoFile = new Path(outputDir, "part-r-00001");
+    localFs.createNewFile(nonLzoFile);
+    FSDataOutputStream outputStream = localFs.create(nonLzoFile);
+    outputStream.writeBytes("key1\tvalue1\nkey2\tvalue2\nkey3\tvalue3\n");
+    outputStream.close();
+
+    Job job = new Job(conf);
+    TextOutputFormat.setCompressOutput(job, true);
+    TextOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
+    TextOutputFormat.setOutputPath(job, outputDir);
+
+    TaskAttemptContext attemptContext = new TaskAttemptContext(job.getConfiguration(),
+        new TaskAttemptID("123", 0, false, 1, 2));
+
+    // create some input data
+    byte[] expectedMd5 = createTestInput(outputDir, localFs, attemptContext, charsToOutput);
+
+    if (testWithIndex) {
+      Path lzoFile = new Path(outputDir, lzoFileName);
+      LzoIndex.createIndex(localFs, lzoFile);
+    }
+
+    LzoTextInputFormat inputFormat = new LzoTextInputFormat();
+    TextInputFormat.setInputPaths(job, outputDir);
+
+    // verify we have the right number of input splits
+    List<InputSplit> is = inputFormat.getSplits(job);
+    int numExpectedLzoSplits = 0;
+    int numExpectedNonLzoSplits = 0;
+    int numActualLzoSplits = 0;
+    int numActualNonLzoSplits = 0;
+    if (!ignoreNonLzo) {
+      numExpectedNonLzoSplits += 1;
+    }
+    if (testWithIndex && OUTPUT_BIG == charsToOutput) {
+      numExpectedLzoSplits += 3;
+    } else {
+      numExpectedLzoSplits += 1;
+    }
+    assertEquals(numExpectedLzoSplits + numExpectedNonLzoSplits, is.size());
+
+    // Verify that we have the right number of each kind of split and the right
+    // data inside the splits.
+    List<String> expectedNonLzoLines = new ArrayList<String>();
+    if (!ignoreNonLzo) {
+      expectedNonLzoLines.add("key1\tvalue1");
+      expectedNonLzoLines.add("key2\tvalue2");
+      expectedNonLzoLines.add("key3\tvalue3");
+    }
+    List<String> actualNonLzoLines = new ArrayList<String>();
+    for (InputSplit inputSplit : is) {
+      FileSplit fileSplit = (FileSplit) inputSplit;
+      Path file = fileSplit.getPath();
+      RecordReader<LongWritable, Text> rr = inputFormat.createRecordReader(
+          inputSplit, attemptContext);
+      rr.initialize(inputSplit, attemptContext);
+      if (LzoInputFormatCommon.isLzoFile(file.toString())) {
+        numActualLzoSplits += 1;
+
+        while (rr.nextKeyValue()) {
+          Text value = rr.getCurrentValue();
+
+          md5.update(value.getBytes(), 0, value.getLength());
+        }
+
+        rr.close();
+      } else {
+        numActualNonLzoSplits += 1;
+
+        while (rr.nextKeyValue()) {
+          actualNonLzoLines.add(rr.getCurrentValue().toString());
+        }
+      }
+    }
+    localFs.close();
+    assertEquals(numExpectedLzoSplits, numActualLzoSplits);
+    assertEquals(numExpectedNonLzoSplits, numActualNonLzoSplits);
+    assertTrue(Arrays.equals(expectedMd5, md5.digest()));
+    assertEquals(expectedNonLzoLines, actualNonLzoLines);
+  }
 }

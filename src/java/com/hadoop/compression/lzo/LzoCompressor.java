@@ -43,9 +43,9 @@ class LzoCompressor implements Compressor {
   private int directBufferSize;
   private byte[] userBuf = null;
   private int userBufOff = 0, userBufLen = 0;
-  private Buffer uncompressedDirectBuf = null;
+  private ByteBuffer uncompressedDirectBuf = null;
   private int uncompressedDirectBufLen = 0;
-  private Buffer compressedDirectBuf = null;
+  private ByteBuffer compressedDirectBuf = null;
   private boolean finish, finished;
 
   private long bytesRead = 0L;
@@ -56,7 +56,15 @@ class LzoCompressor implements Compressor {
   private long lzoCompressor = 0;       // The actual lzo compression function.
   private int workingMemoryBufLen = 0;  // The length of 'working memory' buf.
   @SuppressWarnings("unused")
-  private Buffer workingMemoryBuf;      // The 'working memory' for lzo.
+  private ByteBuffer workingMemoryBuf;      // The 'working memory' for lzo.
+  private int lzoCompressionLevel;
+
+  /**
+   * Used when the user doesn't specify a configuration. We cache a single
+   * one statically, since loading the defaults is expensive.
+   */
+  private static Configuration defaultConfiguration =
+    new Configuration();
 
   /**
    * The compression algorithm for lzo library.
@@ -199,12 +207,13 @@ class LzoCompressor implements Compressor {
     // and the new user of the codec doesn't specify a particular configuration
     // to CodecPool.getCompressor(). So we use the defaults.
     if (conf == null) {
-      conf = new Configuration();
+      conf = defaultConfiguration;
     }
     LzoCompressor.CompressionStrategy strategy = LzoCodec.getCompressionStrategy(conf);
+    int compressionLevel = LzoCodec.getCompressionLevel(conf);
     int bufferSize = LzoCodec.getBufferSize(conf);
 
-    init(strategy, bufferSize);
+    init(strategy, compressionLevel, bufferSize);
   }
 
   /** 
@@ -214,14 +223,46 @@ class LzoCompressor implements Compressor {
    * @param directBufferSize size of the direct buffer to be used.
    */
   public LzoCompressor(CompressionStrategy strategy, int directBufferSize) {
-    init(strategy, directBufferSize);
+    init(strategy, LzoCodec.UNDEFINED_COMPRESSION_LEVEL, directBufferSize);
   }
 
-  private void init(CompressionStrategy strategy, int directBufferSize) {
+  /**
+   * Reallocates a direct byte buffer by freeing the old one and allocating
+   * a new one, unless the size is the same, in which case it is simply
+   * cleared and returned.
+   *
+   * NOTE: this uses unsafe APIs to manually free memory - if anyone else
+   * has a reference to the 'buf' parameter they will likely read random
+   * data or cause a segfault by accessing it.
+   */
+  private ByteBuffer realloc(ByteBuffer buf, int newSize) {
+    if (buf != null) {
+      if (buf.capacity() == newSize) {
+        // Can use existing buffer
+        buf.clear();
+        return buf;
+      }
+      try {
+        // Manually free the old buffer using undocumented unsafe APIs.
+        // If this fails, we'll drop the reference and hope GC finds it
+        // eventually.
+        Object cleaner = buf.getClass().getMethod("cleaner").invoke(buf);
+        cleaner.getClass().getMethod("clean").invoke(cleaner);
+      } catch (Exception e) {
+        // Perhaps a non-sun-derived JVM - contributions welcome
+        LOG.warn("Couldn't realloc bytebuffer", e);
+      }
+    }
+    return ByteBuffer.allocateDirect(newSize);
+  }
+
+  private void init(CompressionStrategy strategy, int compressionLevel, int directBufferSize) {
     this.strategy = strategy;
+    this.lzoCompressionLevel = compressionLevel;
     this.directBufferSize = directBufferSize;
-    uncompressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
-    compressedDirectBuf = ByteBuffer.allocateDirect(directBufferSize);
+
+    uncompressedDirectBuf = realloc(uncompressedDirectBuf, directBufferSize);
+    compressedDirectBuf = realloc(compressedDirectBuf, directBufferSize);
     compressedDirectBuf.position(directBufferSize);
     reset();
 
@@ -229,7 +270,7 @@ class LzoCompressor implements Compressor {
      * Initialize {@link #lzoCompress} and {@link #workingMemoryBufLen}
      */
     init(this.strategy.getCompressor());
-    workingMemoryBuf = ByteBuffer.allocateDirect(workingMemoryBufLen);
+    workingMemoryBuf = realloc(workingMemoryBuf, workingMemoryBufLen);
   }
 
   /**
@@ -384,6 +425,13 @@ class LzoCompressor implements Compressor {
     byte[] b = new byte[(int)bytesRead];
     ((ByteBuffer)uncompressedDirectBuf).get(b);
     return b;
+  }
+
+  /**
+   * Used only by tests.
+   */
+  long getDirectBufferSize() {
+    return directBufferSize;
   }
   
   /**

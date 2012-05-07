@@ -46,17 +46,21 @@ public class LzoCodec implements Configurable, CompressionCodec {
 
   public static final String LZO_COMPRESSOR_KEY = "io.compression.codec.lzo.compressor";
   public static final String LZO_DECOMPRESSOR_KEY = "io.compression.codec.lzo.decompressor";
+  public static final String LZO_COMPRESSION_LEVEL_KEY = "io.compression.codec.lzo.compression.level";
   public static final String LZO_BUFFER_SIZE_KEY = "io.compression.codec.lzo.buffersize";
   public static final int DEFAULT_LZO_BUFFER_SIZE = 256 * 1024;
   public static final int MAX_BLOCK_SIZE = 64*1024*1024;
+  public static final int UNDEFINED_COMPRESSION_LEVEL = -999;  // Constant from LzoCompressor.c
 
 
   private Configuration conf;
 
+  @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
   }
 
+  @Override
   public Configuration getConf() {
     return conf;
   }
@@ -86,6 +90,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
    *         else <code>false</code>
    */
   public static boolean isNativeLzoLoaded(Configuration conf) {
+    assert conf != null : "Configuration cannot be null!";
     return nativeLzoLoaded && conf.getBoolean("hadoop.native.lib", true);
   }
 
@@ -100,10 +105,12 @@ public class LzoCodec implements Configurable, CompressionCodec {
     }
   }
 
+  @Override
   public CompressionOutputStream createOutputStream(OutputStream out) throws IOException {
     return createOutputStream(out, createCompressor());
   }
 
+  @Override
   public CompressionOutputStream createOutputStream(OutputStream out,
       Compressor compressor) throws IOException {
     // Ensure native-lzo library is loaded & initialized
@@ -141,6 +148,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
         compressionOverhead);
   }
 
+  @Override
   public Class<? extends Compressor> getCompressorType() {
     // Ensure native-lzo library is loaded & initialized
     if (!isNativeLzoLoaded(conf)) {
@@ -149,8 +157,10 @@ public class LzoCodec implements Configurable, CompressionCodec {
     return LzoCompressor.class;
   }
 
+  @Override
   public Compressor createCompressor() {
     // Ensure native-lzo library is loaded & initialized
+    assert conf != null : "Configuration cannot be null! You must call setConf() before creating a compressor.";
     if (!isNativeLzoLoaded(conf)) {
       throw new RuntimeException("native-lzo library not available");
     }
@@ -158,11 +168,13 @@ public class LzoCodec implements Configurable, CompressionCodec {
     return new LzoCompressor(conf);
   }
 
+  @Override
   public CompressionInputStream createInputStream(InputStream in)
   throws IOException {
     return createInputStream(in, createDecompressor());
   }
 
+  @Override
   public CompressionInputStream createInputStream(InputStream in,
       Decompressor decompressor)
   throws IOException {
@@ -174,6 +186,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
         conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE));
   }
 
+  @Override
   public Class<? extends Decompressor> getDecompressorType() {
     // Ensure native-lzo library is loaded & initialized
     if (!isNativeLzoLoaded(conf)) {
@@ -182,6 +195,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
     return LzoDecompressor.class;
   }
 
+  @Override
   public Decompressor createDecompressor() {
     // Ensure native-lzo library is loaded & initialized
     if (!isNativeLzoLoaded(conf)) {
@@ -197,37 +211,54 @@ public class LzoCodec implements Configurable, CompressionCodec {
    * Get the default filename extension for this kind of compression.
    * @return the extension including the '.'
    */
+  @Override
   public String getDefaultExtension() {
     return ".lzo_deflate";
   }
 
   static LzoCompressor.CompressionStrategy getCompressionStrategy(Configuration conf) {
+    assert conf != null : "Configuration cannot be null!";
     return LzoCompressor.CompressionStrategy.valueOf(
           conf.get(LZO_COMPRESSOR_KEY,
             LzoCompressor.CompressionStrategy.LZO1X_1.name()));
   }
 
   static LzoDecompressor.CompressionStrategy getDecompressionStrategy(Configuration conf) {
+    assert conf != null : "Configuration cannot be null!";
     return LzoDecompressor.CompressionStrategy.valueOf(
           conf.get(LZO_DECOMPRESSOR_KEY,
             LzoDecompressor.CompressionStrategy.LZO1X.name()));
   }
 
+  static int getCompressionLevel(Configuration conf) {
+    assert conf != null : "Configuration cannot be null!";
+    return conf.getInt(LZO_COMPRESSION_LEVEL_KEY, UNDEFINED_COMPRESSION_LEVEL);
+  }
+
   static int getBufferSize(Configuration conf) {
+    assert conf != null : "Configuration cannot be null!";
     return conf.getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE);
   }
 
   public static void setCompressionStrategy(Configuration conf,
                                             LzoCompressor.CompressionStrategy strategy) {
+    assert conf != null : "Configuration cannot be null!";
     conf.set(LZO_COMPRESSOR_KEY, strategy.name());
   }
 
   public static void setDecompressionStrategy(Configuration conf,
                                               LzoDecompressor.CompressionStrategy strategy) {
+    assert conf != null : "Configuration cannot be null!";
     conf.set(LZO_DECOMPRESSOR_KEY, strategy.name());
   }
 
+  public static void setCompressionLevel(Configuration conf, int compressionLevel) {
+    assert conf != null : "Configuration cannot be null!";
+    conf.setInt(LZO_COMPRESSION_LEVEL_KEY, compressionLevel);
+  }
+
   public static void setBufferSize(Configuration conf, int bufferSize) {
+    assert conf != null : "Configuration cannot be null!";
     conf.setInt(LZO_BUFFER_SIZE_KEY, bufferSize);
   }
 

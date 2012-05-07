@@ -20,6 +20,7 @@ package com.hadoop.compression.lzo;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configurable;
@@ -28,6 +29,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 
@@ -164,26 +167,30 @@ public class LzoIndex {
    */
   public static LzoIndex readIndex(FileSystem fs, Path lzoFile) throws IOException {
     FSDataInputStream indexIn = null;
-    try {
-      Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
-      if (!fs.exists(indexFile)) {
-        // return empty index, fall back to the unsplittable mode
-        return new LzoIndex();
-      }
+    Path indexFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
 
-      long indexLen = fs.getFileStatus(indexFile).getLen();
-      int blocks = (int) (indexLen / 8);
-      LzoIndex index = new LzoIndex(blocks);
+    try {
       indexIn = fs.open(indexFile);
-      for (int i = 0; i < blocks; i++) {
-        index.set(i, indexIn.readLong());
-      }
-      return index;
-    } finally {
-      if (indexIn != null) {
-        indexIn.close();
-      }
+    } catch (IOException fileNotFound) {
+      // return empty index, fall back to the unsplittable mode
+      return new LzoIndex();
     }
+
+    int capacity = 16 * 1024 * 8; //size for a 4GB file (with 256KB lzo blocks)
+    DataOutputBuffer bytes = new DataOutputBuffer(capacity);
+
+    // copy indexIn and close it
+    IOUtils.copyBytes(indexIn, bytes, 4*1024, true);
+
+    ByteBuffer bytesIn = ByteBuffer.wrap(bytes.getData(), 0, bytes.getLength());
+    int blocks = bytesIn.remaining()/8;
+    LzoIndex index = new LzoIndex(blocks);
+
+    for (int i = 0; i < blocks; i++) {
+      index.set(i, bytesIn.getLong());
+    }
+
+    return index;
   }
 
   /**

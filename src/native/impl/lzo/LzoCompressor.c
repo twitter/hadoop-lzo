@@ -35,6 +35,7 @@ typedef struct {
 
 #define UNDEFINED_COMPRESSION_LEVEL -999
 
+// Default compression level used when user supplies no value.
 static lzo_compressor lzo_compressors[] = {
   /** lzo1 compressors */
   /* 0 */   {"lzo1_compress", LZO1_MEM_COMPRESS, UNDEFINED_COMPRESSION_LEVEL},
@@ -112,6 +113,7 @@ static jfieldID LzoCompressor_uncompressedDirectBufLen;
 static jfieldID LzoCompressor_compressedDirectBuf;
 static jfieldID LzoCompressor_directBufferSize;
 static jfieldID LzoCompressor_lzoCompressor;
+static jfieldID LzoCompressor_lzoCompressionLevel;
 static jfieldID LzoCompressor_workingMemoryBufLen;
 static jfieldID LzoCompressor_workingMemoryBuf;
 
@@ -134,21 +136,23 @@ Java_com_hadoop_compression_lzo_LzoCompressor_initIDs(
   LzoCompressor_finished = (*env)->GetFieldID(env, class, "finished", "Z");
   LzoCompressor_uncompressedDirectBuf = (*env)->GetFieldID(env, class, 
                                                     "uncompressedDirectBuf", 
-                                                    "Ljava/nio/Buffer;");
+                                                    "Ljava/nio/ByteBuffer;");
   LzoCompressor_uncompressedDirectBufLen = (*env)->GetFieldID(env, class, 
                                             "uncompressedDirectBufLen", "I");
   LzoCompressor_compressedDirectBuf = (*env)->GetFieldID(env, class, 
                                                         "compressedDirectBuf",
-                                                        "Ljava/nio/Buffer;");
+                                                        "Ljava/nio/ByteBuffer;");
   LzoCompressor_directBufferSize = (*env)->GetFieldID(env, class, 
                                             "directBufferSize", "I");
   LzoCompressor_lzoCompressor = (*env)->GetFieldID(env, class, 
                                           "lzoCompressor", "J");
+  LzoCompressor_lzoCompressionLevel = (*env)->GetFieldID(env, class,
+                                                "lzoCompressionLevel", "I");
   LzoCompressor_workingMemoryBufLen = (*env)->GetFieldID(env, class,
                                                 "workingMemoryBufLen", "I");
   LzoCompressor_workingMemoryBuf = (*env)->GetFieldID(env, class, 
                                               "workingMemoryBuf", 
-                                              "Ljava/nio/Buffer;");
+                                              "Ljava/nio/ByteBuffer;");
 
   // record lzo library version
   void* lzo_version_ptr = NULL;
@@ -189,7 +193,6 @@ Java_com_hadoop_compression_lzo_LzoCompressor_init(
   // Save the compressor-function into LzoCompressor_lzoCompressor
   (*env)->SetIntField(env, this, LzoCompressor_workingMemoryBufLen,
                       lzo_compressors[compressor].wrkmem);
-
   return;
 }
 
@@ -217,6 +220,13 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
 									                        LzoCompressor_compressedDirectBuf);
 	lzo_uint compressed_direct_buf_len = (*env)->GetIntField(env, this, 
 									                            LzoCompressor_directBufferSize);
+
+  // Prefer the user defined compression level.
+  int compression_level = (*env)->GetIntField(env, this,
+      LzoCompressor_lzoCompressionLevel);
+  if (UNDEFINED_COMPRESSION_LEVEL == compression_level) {
+    compression_level = lzo_compressors[compressor].compression_level;
+  }
 
 	jobject working_memory_buf = (*env)->GetObjectField(env, this, 
 									                      LzoCompressor_workingMemoryBuf);
@@ -256,12 +266,17 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
 	// Compress
   lzo_uint no_compressed_bytes = compressed_direct_buf_len;
 	int rv = 0;
-  int compression_level = lzo_compressors[compressor].compression_level;
   if (compression_level == UNDEFINED_COMPRESSION_LEVEL) {
     lzo_compress_t fptr = (lzo_compress_t) FUNC_PTR(lzo_compressor_funcptr);
     rv = fptr(uncompressed_bytes, uncompressed_direct_buf_len,
               compressed_bytes, &no_compressed_bytes, 
               workmem);
+  } else if (strstr(lzo_compressor_function, "lzo1x_999")
+             || strstr(lzo_compressor_function, "lzo1y_999")) {
+    // Compression levels are only available in these codecs.
+    rv = lzo1x_999_compress_level(uncompressed_bytes, uncompressed_direct_buf_len,
+                                  compressed_bytes, &no_compressed_bytes,
+                                  workmem, NULL, 0, 0, compression_level);
   } else {
     lzo_compress2_t fptr = (lzo_compress2_t) FUNC_PTR(lzo_compressor_funcptr);
     rv = fptr(uncompressed_bytes, uncompressed_direct_buf_len,
