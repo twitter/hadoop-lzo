@@ -85,7 +85,7 @@ Header files are not available in all Java installs. Double-check you are using 
 
 The hadoop-lzo package is available at `http://maven.twttr.com/`.
 
-For example, if you are using `ivy`, ddd the repository in `ivysettings.xml`:
+For example, if you are using `ivy`, add the repository in `ivysettings.xml`:
 ```xml
   <ibiblio name="twttr.com" m2compatible="true" root="http://maven.twttr.com/"/>
 ```
