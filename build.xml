@@ -18,7 +18,7 @@
  <http://www.gnu.org/licenses/>.
 -->
 
-<project name="Hadoop-GPL-Compression" default="compile"
+<project name="hadoop-lzo" default="compile"
    xmlns:ivy="antlib:org.apache.ivy.ant"
    xmlns:artifact="urn:maven-artifact-ant"> 
 
@@ -578,6 +578,8 @@
 
   <target name="ivy-resolve" depends="ivy-init">
     <ivy:resolve settingsRef="${ant.project.name}.ivy.settings"/>
+    <ivy:makepom ivyfile="${basedir}/ivy.xml"
+                 pomfile="${build.dir}/${final.name}.pom"/>
   </target>
 
   <target name="ivy-resolve-common" depends="ivy-init">
@@ -662,6 +664,14 @@
      <artifact:install file="${build.ivy.maven.dir}/${final.name}.jar">
         <pom refid="hadoop.lzo.mvn.install"/>
      </artifact:install>
+  </target>
+
+  <target name="publish-local" depends="ivy-resolve, jar, mvn-taskdef"
+          description="publish maven artifact to build/repo/">
+    <artifact:deploy file="${build.dir}/${final.name}.jar">
+      <artifact:remoteRepository url="file://${build.dir}/repo"/>
+      <artifact:pom file="${build.dir}/${final.name}.pom"/>
+    </artifact:deploy>
   </target>
 
 </project>
