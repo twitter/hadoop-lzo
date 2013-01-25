@@ -81,6 +81,20 @@ Header files are not available in all Java installs. Double-check you are using 
     $ ls -d /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/include
     ls: /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/include: No such file or directory
 
+### Maven repository
+
+The hadoop-lzo package is available at `http://maven.twttr.com/`.
+
+For example, if you are using `ivy`, add the repository in `ivysettings.xml`:
+```xml
+  <ibiblio name="twttr.com" m2compatible="true" root="http://maven.twttr.com/"/>
+```
+
+And include hadoop-lzo as a dependency:
+```xml
+  <dependency org="com.hadoop.gplcompression" name="hadoop-lzo" rev="0.4.15"/>
+```
+
 ### Using Hadoop and LZO
 
 #### Reading and Writing LZO Data

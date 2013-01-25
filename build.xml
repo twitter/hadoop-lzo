@@ -29,7 +29,7 @@
  
   <property name="Name" value="Hadoop GPL Compression"/>
   <property name="name" value="hadoop-lzo"/>
-  <property name="version" value="0.4.16"/>
+  <property name="version" value="0.4.17-SNAPSHOT"/>
   <property name="final.name" value="${name}-${version}"/>
   <property name="year" value="2011"/>
 
@@ -668,17 +668,6 @@
 
   <target name="publish-local" depends="ivy-resolve, jar, mvn-taskdef"
           description="publish maven artifact to build/repo/">
-   <!-- How to publish to maven.twttr.com:
-    $ ant publish-local # creates uild/repo/com/hadoop/gplcompression/hadoop-lzo/${version}
-    $ cd build
-    $ svn co https://svn.twitter.biz/maven-public/com/hadoop/gplcompression/hadoop-lzo mvn-hadoop-lzo
-    $ cd mvn-hadoop-lzo
-    $ cp -r ../repo/com/hadoop/gplcompression/hadoop-lzo/${version} .
-    $ svn add ${version}
-    $ svn commit -m "hadoop-lzo version ${version}" ${version}
-
-    # there is probably an ant target for this
-   -->
     <artifact:deploy file="${build.dir}/${final.name}.jar">
       <artifact:remoteRepository url="file://${build.dir}/repo"/>
       <artifact:pom file="${build.dir}/${final.name}.pom"/>
