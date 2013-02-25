@@ -207,7 +207,7 @@ class LzoDecompressor implements Decompressor {
           len + " is greater than this decompressor's directBufferSize: " + 
           directBufferSize + ". To fix this, increase the value of your " + 
           "configuration's io.compression.codec.lzo.buffersize to be larger " +
-          "than: " + len + ".")
+          "than: " + len + ".");
       }
     }
 
