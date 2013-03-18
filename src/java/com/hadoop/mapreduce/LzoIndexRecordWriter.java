@@ -1,5 +1,6 @@
 package com.hadoop.mapreduce;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.hadoop.compression.lzo.LzoIndex;
@@ -59,8 +60,13 @@ public class LzoIndexRecordWriter extends RecordWriter<Path, LongWritable> {
     realIndexPath = path.suffix(LzoIndex.LZO_INDEX_SUFFIX);
 
     // Delete the old index files if they exist.
-    fs.delete(tmpIndexPath, false);
-    fs.delete(realIndexPath, false);
+    try{
+        fs.delete(tmpIndexPath, false);
+    }catch(FileNotFoundException ignored){}
+
+    try{
+        fs.delete(realIndexPath, false);
+    }catch(FileNotFoundException ignored){}
 
     return fs.create(tmpIndexPath, false);
   }
