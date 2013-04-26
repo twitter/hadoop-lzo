@@ -201,6 +201,16 @@ class LzoDecompressor implements Decompressor {
   }
 
   public synchronized void setInput(byte[] b, int off, int len) {
+    if (!isCurrentBlockUncompressed()) {
+      if (len > directBufferSize) {
+        LOG.warn("Decompression will fail because compressed buffer size :" +
+          len + " is greater than this decompressor's directBufferSize: " + 
+          directBufferSize + ". To fix this, increase the value of your " + 
+          "configuration's io.compression.codec.lzo.buffersize to be larger " +
+          "than: " + len + ".");
+      }
+    }
+
     if (b == null) {
       throw new NullPointerException();
     }

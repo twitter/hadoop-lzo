@@ -269,6 +269,7 @@
   	   verbose="yes">
       <class name="com.hadoop.compression.lzo.LzoCompressor" />
       <class name="com.hadoop.compression.lzo.LzoDecompressor" />
+      <classpath refid="classpath"/>
     </javah>
 
     <exec dir="${build.native}" executable="sh" failonerror="true">
