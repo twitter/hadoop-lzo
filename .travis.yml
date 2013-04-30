@@ -1,0 +1,4 @@
+language: java
+jdk:
+  - openjdk6 # works with 7 too
+
