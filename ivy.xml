@@ -16,7 +16,7 @@
       extends="client,server"/>
 
     <conf name="mandatory" description="contains the critical  dependencies"
-      extends="commons-logging"/>
+      extends="hadoop,commons-logging"/>
 
     <!--
     These public configurations contain the core dependencies for running hadoop client or server.
@@ -37,6 +37,7 @@
     <conf name="test" extends="common,default" visibility="private"
       description="the classpath needed to run tests"/>
      
+    <conf name="hadoop" visibility="private"/>
     <conf name="commons-logging" visibility="private"/>
     <conf name="log4j" visibility="private"/>
 
@@ -64,6 +65,16 @@
 
     <!--Configuration: commons-logging -->
 
+    <dependency org="org.apache.hadoop"
+      name="hadoop-common"
+      rev="${hadoop.version}"
+      conf="hadoop->default"/>
+
+    <dependency org="org.apache.hadoop"
+      name="hadoop-mapreduce-client-core"
+      rev="${hadoop.version}"
+      conf="hadoop->default"/>
+
     <!--log4J is not optional until commons-logging.properties is stripped out of the JAR -->
     <dependency org="log4j"
       name="log4j"
@@ -77,10 +88,7 @@
       name="junit"
       rev="${junit.version}"
       conf="common->default"/>
-    <dependency org="commons-logging"
-      name="commons-logging-api"
-      rev="${commons-logging-api.version}"
-      conf="common->default"/>
+
     </dependencies>
   
 </ivy-module>

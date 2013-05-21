@@ -31,13 +31,12 @@
   <property name="name" value="hadoop-lzo"/>
   <property name="version" value="0.4.17-SNAPSHOT"/>
   <property name="final.name" value="${name}-${version}"/>
-  <property name="year" value="2011"/>
+  <property name="year" value="2013"/>
 
   <property name="src.dir" value="${basedir}/src"/>  	
   <property name="java.src.dir" value="${src.dir}/java"/>
   <property name="native.src.dir" value="${basedir}/src/native"/>
   <property name="lib.dir" value="${basedir}/lib"/>
-  <property name="test.lib.dir" value="${lib.dir}"/>
 
   <property name="build.dir" value="${basedir}/build"/>
   <property name="build.classes" value="${build.dir}/classes"/>
@@ -128,10 +127,6 @@
   <!-- the normal classpath -->
   <path id="classpath">
     <pathelement location="${build.classes}"/>
-    <fileset dir="${lib.dir}">
-      <include name="**/*.jar" />
-      <exclude name="**/excluded/" />
-    </fileset>
     <pathelement location="${conf.dir}"/>
     <path refid="ivy-common.classpath"/>
   </path>
@@ -144,10 +139,6 @@
     <pathelement location="${build.dir}"/>
     <pathelement location="${build.examples}"/>
     <pathelement location="${build.tools}"/>
-    <fileset dir="${test.lib.dir}">
-      <include name="**/*.jar" />
-      <exclude name="**/excluded/" />
-    </fileset>
     <path refid="classpath"/>
   </path>
 
@@ -452,7 +443,7 @@
   <!-- ================================================================== -->
   <!--                                                                    -->
   <!-- ================================================================== -->
-  <target name="package" depends="compile, jar, javadoc"
+  <target name="package" depends="compile, test, jar, javadoc"
           description="Build distribution">
     <mkdir dir="${dist.dir}"/>
     <mkdir dir="${dist.dir}/lib"/>
@@ -462,7 +453,7 @@
       <fileset dir="${common.ivy.lib.dir}"/>
     </copy>
 
-    <copy todir="${dist.dir}/lib" includeEmptyDirs="false">
+    <copy todir="${dist.dir}/lib" includeEmptyDirs="false" failonerror="false">
       <fileset dir="lib">
         <exclude name="**/native/**"/>
         <exclude name="*hadoop*.jar"/>
@@ -629,10 +620,10 @@
   <target name="makepom" depends="ivy-resolve">
     <ivy:makepom settingsRef="${ant.project.name}.ivy.settings"
       ivyfile="ivy.xml"
-      pomfile="${build.ivy.maven.dir}/${final.name}.pom">
-      <ivy:mapping conf="default" scope="default"/>
-      <ivy:mapping conf="master" scope="master"/>
-      <ivy:mapping conf="runtime" scope="runtime"/>
+      pomfile="${build.ivy.maven.dir}/${final.name}.pom"
+      printIvyInfo="false">
+      <ivy:mapping conf="hadoop" scope="provided"/>
+      <ivy:mapping conf="mandatory" scope="compile"/>
     </ivy:makepom>
   </target>
 

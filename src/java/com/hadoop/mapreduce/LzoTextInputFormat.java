@@ -41,7 +41,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 import com.hadoop.compression.lzo.LzoIndex;
 import com.hadoop.compression.lzo.LzoInputFormatCommon;
-import com.hadoop.compression.lzo.LzopCodec;
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 /**
  * An {@link InputFormat} for lzop compressed text files. Files are broken into
@@ -59,7 +59,7 @@ public class LzoTextInputFormat extends TextInputFormat {
   protected List<FileStatus> listStatus(JobContext job) throws IOException {
     List<FileStatus> files = super.listStatus(job);
 
-    Configuration conf = job.getConfiguration();
+    Configuration conf = CompatibilityUtil.getConfiguration(job);
     boolean ignoreNonLzo = LzoInputFormatCommon.getIgnoreNonLzoProperty(conf);
 
     for (Iterator<FileStatus> iterator = files.iterator(); iterator.hasNext();) {
@@ -99,7 +99,7 @@ public class LzoTextInputFormat extends TextInputFormat {
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
     List<InputSplit> splits = super.getSplits(job);
-    Configuration conf = job.getConfiguration();
+    Configuration conf = CompatibilityUtil.getConfiguration(job);
     // find new start/ends of the filesplit that aligns
     // with the lzo blocks
 
