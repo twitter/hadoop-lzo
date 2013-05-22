@@ -19,6 +19,7 @@
 #include "gpl-compression.h"
 #include "lzo.h"
 #include <stdlib.h>
+#include <string.h>
 
 // The lzo2 library-handle
 static void *liblzo2 = NULL;
