@@ -8,7 +8,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.apache.hadoop.mapreduce.TaskType;
 
 
 /**
@@ -19,7 +18,6 @@ public class CompatibilityUtil {
   private static final boolean useV2;
 
   private static final Constructor<?> TASK_ATTEMPT_CONTEXT_CONSTRUCTOR;
-  private static final Constructor<?> TASK_ATTEMPT_ID_CONSTRUCTOR;
 
   private static final Method GET_CONFIGURATION;
 
@@ -41,13 +39,6 @@ public class CompatibilityUtil {
       TASK_ATTEMPT_CONTEXT_CONSTRUCTOR =
         taskAttemptContextCls.getConstructor(Configuration.class,
                                              TaskAttemptID.class);
-
-      TASK_ATTEMPT_ID_CONSTRUCTOR =
-        TaskAttemptID.class.getConstructor(String.class,
-                                           int.class,
-                                           useV2 ? TaskType.class : boolean.class, 
-                                           int.class,
-                                           int.class);
 
       GET_CONFIGURATION =
         Class.forName("org.apache.hadoop.mapreduce.JobContext")
@@ -85,26 +76,9 @@ public class CompatibilityUtil {
    * constructor for based on the hadoop version.
    */
   public static TaskAttemptContext newTaskAttemptContext(Configuration conf,
-                                                         String jtIdentifier,
-                                                         int jobId,
-                                                         boolean isMap,
-                                                         int taskId,
-                                                         int id) {
+                                                         TaskAttemptID id) {
     return (TaskAttemptContext)
-      newInstance(TASK_ATTEMPT_CONTEXT_CONSTRUCTOR, conf,
-        newTaskAttemptID(jtIdentifier, jobId, isMap, taskId, id));
-  }
-
-  private static TaskAttemptID newTaskAttemptID(String jtIdentifier,
-                                                int jobId,
-                                                boolean isMap,
-                                                int taskId,
-                                                int id) {
-    // in 2.x isMap = true maps to TaskType.MAP; false to TaskType.REDUCE
-    Object[] args = useV2 ?
-      new Object[] {jtIdentifier, jobId, isMap ? TaskType.MAP : TaskType.REDUCE, taskId, id} :
-      new Object[] {jtIdentifier, jobId, isMap, taskId, id};
-    return (TaskAttemptID)newInstance(TASK_ATTEMPT_ID_CONSTRUCTOR, args);
+        newInstance(TASK_ATTEMPT_CONTEXT_CONSTRUCTOR, conf, id);
   }
 
   private static Object invoke(Method method, Object obj, Object... args) {
