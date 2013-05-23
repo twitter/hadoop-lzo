@@ -31,8 +31,8 @@ import junit.framework.TestCase;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -43,6 +43,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -51,6 +52,7 @@ import com.hadoop.compression.lzo.GPLNativeCodeLoader;
 import com.hadoop.compression.lzo.LzoIndex;
 import com.hadoop.compression.lzo.LzoInputFormatCommon;
 import com.hadoop.compression.lzo.LzopCodec;
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 /**
  * Test the LzoTextInputFormat, make sure it splits the file properly and
@@ -165,11 +167,12 @@ public class TestLzoTextInputFormat extends TestCase {
     TextOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
     TextOutputFormat.setOutputPath(job, outputDir);
 
-    TaskAttemptContext attemptContext = new TaskAttemptContext(job.getConfiguration(),
-        new TaskAttemptID("123", 0, false, 1, 2));
+    TaskAttemptContext attemptContext = 
+        CompatibilityUtil.newTaskAttemptContext(job.getConfiguration(),
+          new TaskAttemptID(TaskID.forName("task_123_0001_r_000001"), 2));
 
     // create some input data
-    byte[] expectedMd5 = createTestInput(outputDir, localFs, attemptContext, charsToOutput);
+    byte[] expectedMd5 = createTestInput(localFs, job, attemptContext, charsToOutput);
    
     if (testWithIndex) {
       Path lzoFile = new Path(outputDir, lzoFileName);
@@ -209,16 +212,18 @@ public class TestLzoTextInputFormat extends TestCase {
   /**
    * Creates an lzo file with random data.
    * 
-   * @param outputDir Output directory.
    * @param fs File system we're using.
    * @param attemptContext Task attempt context, contains task id etc. 
+   *
    * @throws IOException
    * @throws InterruptedException
    */
-  private byte[] createTestInput(Path outputDir, FileSystem fs, TaskAttemptContext attemptContext, 
+  private byte[] createTestInput(FileSystem fs, Job job, TaskAttemptContext attemptContext, 
       int charsToOutput) throws IOException, InterruptedException {
 
     TextOutputFormat<Text, Text> output = new TextOutputFormat<Text, Text>();
+    OutputCommitter committer = output.getOutputCommitter(attemptContext);
+    committer.setupJob(job);
     RecordWriter<Text, Text> rw = null;
 
     md5.reset();
@@ -245,9 +250,8 @@ public class TestLzoTextInputFormat extends TestCase {
     } finally {
       if (rw != null) {
         rw.close(attemptContext);
-        OutputCommitter committer = output.getOutputCommitter(attemptContext);
         committer.commitTask(attemptContext);
-        committer.cleanupJob(attemptContext);
+        committer.commitJob(job);
       }
     }
 
@@ -312,11 +316,12 @@ public class TestLzoTextInputFormat extends TestCase {
     TextOutputFormat.setOutputCompressorClass(job, LzopCodec.class);
     TextOutputFormat.setOutputPath(job, outputDir);
 
-    TaskAttemptContext attemptContext = new TaskAttemptContext(job.getConfiguration(),
-        new TaskAttemptID("123", 0, false, 1, 2));
+    TaskAttemptContext attemptContext =
+        CompatibilityUtil.newTaskAttemptContext(job.getConfiguration(),
+          new TaskAttemptID(TaskID.forName("task_123_0001_r_000001"), 2));
 
     // create some input data
-    byte[] expectedMd5 = createTestInput(outputDir, localFs, attemptContext, charsToOutput);
+    byte[] expectedMd5 = createTestInput(localFs, job, attemptContext, charsToOutput);
 
     if (testWithIndex) {
       Path lzoFile = new Path(outputDir, lzoFileName);

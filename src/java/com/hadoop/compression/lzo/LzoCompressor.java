@@ -19,7 +19,6 @@
 package com.hadoop.compression.lzo;
 
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 import org.apache.commons.logging.Log;

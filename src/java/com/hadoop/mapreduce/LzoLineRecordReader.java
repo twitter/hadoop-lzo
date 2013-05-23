@@ -34,6 +34,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.LineReader;
 
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
+
 /**
  * Reads line from an lzo compressed text file. Treats keys as offset in file
  * and value as line.
@@ -88,7 +90,7 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     start = split.getStart();
     end = start + split.getLength();
     final Path file = split.getPath();
-    Configuration job = context.getConfiguration();
+    Configuration job = CompatibilityUtil.getConfiguration(context);
 
     FileSystem fs = file.getFileSystem(job);
     CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);

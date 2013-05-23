@@ -3,8 +3,6 @@ package com.hadoop.mapreduce;
 import java.io.EOFException;
 import java.io.IOException;
 
-import com.hadoop.compression.lzo.LzopCodec;
-import com.hadoop.compression.lzo.LzopDecompressor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
@@ -19,6 +17,9 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
+import com.hadoop.compression.lzo.LzopDecompressor;
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
   private static final Log LOG = LogFactory.getLog(LzoSplitRecordReader.class);
@@ -44,7 +45,7 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
     totalFileSize = fileSplit.getLength();
 
     // Jump through some hoops to create the lzo codec.
-    Configuration conf = context.getConfiguration();
+    Configuration conf = CompatibilityUtil.getConfiguration(context);
     CompressionCodecFactory factory = new CompressionCodecFactory(conf);
     CompressionCodec codec = factory.getCodec(lzoFile);
     ((Configurable)codec).setConf(conf);
