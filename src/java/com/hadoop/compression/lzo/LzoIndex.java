@@ -20,7 +20,7 @@ package com.hadoop.compression.lzo;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configurable;
@@ -29,8 +29,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 
@@ -43,6 +41,13 @@ public class LzoIndex {
   public static final long NOT_FOUND = -1;
 
   private long[] blockPositions_;
+
+  private static ArrayList<Class<? extends LzoIndexSerde>> serdeClasses =
+      new ArrayList<Class<? extends LzoIndexSerde>>();
+  static {
+    serdeClasses.add(LzoBasicIndexSerde.class);
+    serdeClasses.add(LzoTinyOffsetsSerde.class);
+  }
 
   /**
    * Create an empty index, typically indicating no index file exists.
@@ -175,21 +180,29 @@ public class LzoIndex {
       // return empty index, fall back to the unsplittable mode
       return new LzoIndex();
     }
-
-    int capacity = 16 * 1024 * 8; //size for a 4GB file (with 256KB lzo blocks)
-    DataOutputBuffer bytes = new DataOutputBuffer(capacity);
-
-    // copy indexIn and close it
-    IOUtils.copyBytes(indexIn, bytes, 4*1024, true);
-
-    ByteBuffer bytesIn = ByteBuffer.wrap(bytes.getData(), 0, bytes.getLength());
-    int blocks = bytesIn.remaining()/8;
-    LzoIndex index = new LzoIndex(blocks);
-
-    for (int i = 0; i < blocks; i++) {
-      index.set(i, bytesIn.getLong());
+    long firstLong = indexIn.readLong();
+    LzoIndexSerde serde = null;
+    for (Class<? extends LzoIndexSerde> candidateClass : serdeClasses) {
+      LzoIndexSerde candidate = null;
+      candidate = quietGetInstance(candidateClass);
+      if (candidate.accepts(firstLong)) {
+        serde = candidate;
+        break;
+      }
     }
+    serde.prepareToRead(indexIn);
+    // Sized for at least 1 256MB HDFS block with 256KB Lzo blocks.
+    // if it's less than that, you shouldn't bother indexing anyway.
+    ArrayList<Long> offsets = new ArrayList<Long>(1024);
+    while (serde.hasNext()) {
+      offsets.add(serde.next());
+    }
+    serde.finishReading();
 
+    LzoIndex index = new LzoIndex(offsets.size());
+    for (int i = 0; i < offsets.size(); i++) {
+      index.set(i, offsets.get(i));
+    }
     return index;
   }
 
@@ -217,6 +230,8 @@ public class LzoIndex {
 
     FSDataInputStream is = null;
     FSDataOutputStream os = null;
+    LzoIndexSerde writer = new LzoTinyOffsetsSerde();
+
     Path outputFile = lzoFile.suffix(LZO_INDEX_SUFFIX);
     Path tmpOutputFile = lzoFile.suffix(LZO_TMP_INDEX_SUFFIX);
 
@@ -226,6 +241,7 @@ public class LzoIndex {
     try {
       is = fs.open(lzoFile);
       os = fs.create(tmpOutputFile);
+      writer.prepareToWrite(os);
       LzopDecompressor decompressor = (LzopDecompressor) codec.createDecompressor();
       // Solely for reading the header
       codec.createInputStream(is, decompressor);
@@ -252,7 +268,7 @@ public class LzoIndex {
             numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
         long pos = is.getPos();
         // write the pos of the block start
-        os.writeLong(pos - 8);
+        writer.writeOffset(pos - 8);
         // seek to the start of the next block, skip any checksums
         is.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
       }
@@ -263,7 +279,7 @@ public class LzoIndex {
       if (is != null) {
         is.close();
       }
-
+      writer.finishWriting();
       if (os != null) {
         os.close();
       }
@@ -276,6 +292,18 @@ public class LzoIndex {
         fs.rename(tmpOutputFile, outputFile);
       }
     }
+  }
+
+  private static LzoIndexSerde quietGetInstance(Class<? extends LzoIndexSerde> klass) throws IOException {
+    LzoIndexSerde instance = null;
+    try {
+      instance = klass.newInstance();
+    } catch (InstantiationException e) {
+      throw new IOException(e);
+    } catch (IllegalAccessException e) {
+      throw new IOException(e);
+    }
+    return instance;
   }
 }
 

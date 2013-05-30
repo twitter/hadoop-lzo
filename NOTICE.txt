@@ -1,0 +1,10 @@
+This product is distributed under the GNU General Public License (GPL v2+) (see COPYING).
+
+This product includes software developed by several Apache Software Foundation projects,
+licensed under the Apache License, 2.0, including but not limited to:
+  - Apache Mahout
+  - Apache Hadoop
+
+This product includes a JUnit jar: http://junit.sourceforge.net/
+License: Common Public License - v 1.0 (http://junit.sourceforge.net/cpl-v10.html)
+Copyright (c) 2000-2006, www.hamcrest.org
