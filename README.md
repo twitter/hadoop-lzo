@@ -30,7 +30,6 @@ LZO 2.x is required, and most easily installed via the package manager on your s
 
 Now let's build hadoop-lzo.
 
-    JAVA_HOME=/Library/Java/JavaVirtualMachines/1.6.0_29-b11-402.jdk/Contents/Home \
     C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
     LIBRARY_PATH=/usr/local/lzo-2.06/lib \
       mvn clean test
