@@ -91,7 +91,7 @@ For example, if you are using `ivy`, add the repository in `ivysettings.xml`:
 
 And include hadoop-lzo as a dependency:
 ```xml
-  <dependency org="com.hadoop.gplcompression" name="hadoop-lzo" rev="0.4.15"/>
+  <dependency org="com.hadoop.gplcompression" name="hadoop-lzo" rev="0.4.17"/>
 ```
 
 ### Using Hadoop and LZO
