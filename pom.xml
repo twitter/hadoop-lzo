@@ -1,14 +1,102 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>com.hadoop.gplcompression</groupId>
   <artifactId>hadoop-lzo</artifactId>
   <version>0.4.18-SNAPSHOT</version>
   <packaging>jar</packaging>
-
   <name>hadoop-lzo</name>
+  <description>Hadoop-lzo library (Twitter)</description>
   <url>https://github.com/twitter/hadoop-lzo</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>2.0.4-alpha</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>2.0.4-alpha</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>scm:git:git@github.com:twitter/hadoop-lzo.git</url>
+    <connection>scm:git:git@github.com:twitter/hadoop-lzo.git</connection>
+    <developerConnection>scm:git:git@github.com:twitter/hadoop-lzo.git</developerConnection>
+  </scm>
+  <issueManagement>
+    <url>https://github.com/twitter/hadoop-lzo/issues</url>
+  </issueManagement>
+  <ciManagement>
+    <url>https://travis-ci.org/twitter/hadoop-lzo</url>
+  </ciManagement>
+
+  <developers>
+    <developer>
+      <id>rangadi</id>
+      <name>Raghu Angadi</name>
+      <email>raghu@twitter.com</email>
+    </developer>
+    <developer>
+      <id>traciscrawford</id>
+      <name>Travis Crawford</name>
+      <email>travis@twitter.com</email>
+    </developer>
+    <developer>
+      <id>sjlee</id>
+      <name>Sangjin Lee</name>
+      <email>sjlee@twitter.com</email>
+    </developer>
+  </developers>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype OSS</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Release Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>sonatype-nexus-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+     </repository>
+  </repositories>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -264,40 +352,4 @@
       </plugins>
     </pluginManagement>
   </build>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <version>2.0.4-alpha</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <version>2.0.4-alpha</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.2</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
-  <scm>
-    <url>https://github.com/twitter/hadoop-lzo.git</url>
-  </scm>
-  <issueManagement>
-    <url>https://github.com/twitter/hadoop-lzo/issues</url>
-  </issueManagement>
-  <ciManagement>
-    <url>https://travis-ci.org/twitter/hadoop-lzo</url>
-  </ciManagement>
 </project>
