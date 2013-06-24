@@ -19,7 +19,7 @@
 package com.hadoop.compression.lzo;
 
 import java.io.IOException;
-import java.nio.Buffer;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 
 import org.apache.commons.logging.Log;
@@ -246,8 +246,12 @@ class LzoCompressor implements Compressor {
         // Manually free the old buffer using undocumented unsafe APIs.
         // If this fails, we'll drop the reference and hope GC finds it
         // eventually.
-        Object cleaner = buf.getClass().getMethod("cleaner").invoke(buf);
-        cleaner.getClass().getMethod("clean").invoke(cleaner);
+        Method cleanerMethod = buf.getClass().getMethod("cleaner");
+        cleanerMethod.setAccessible(true);
+        Object cleaner = cleanerMethod.invoke(buf);
+        Method cleanMethod = cleaner.getClass().getMethod("clean");
+        cleanMethod.setAccessible(true);
+        cleanMethod.invoke(cleaner);
       } catch (Exception e) {
         // Perhaps a non-sun-derived JVM - contributions welcome
         LOG.warn("Couldn't realloc bytebuffer", e);

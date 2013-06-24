@@ -20,7 +20,6 @@ package com.hadoop.compression.lzo;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.hadoop.compression.lzo.LzoIndexer;
 import com.hadoop.compression.lzo.LzopCodec;
 
 /**

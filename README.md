@@ -1,4 +1,4 @@
-Hadoop-LZO
+Hadoop-LZO [![Build Status](https://travis-ci.org/twitter/hadoop-lzo.png?branch=master)](https://travis-ci.org/twitter/hadoop-lzo)
 ==========
 
 Hadoop-LZO is a project to bring splittable LZO compression to Hadoop.  LZO is an ideal compression format for Hadoop due to its combination of speed and compression size.  However, LZO files are not natively splittable, meaning the parallelism that is the core of Hadoop is gone.  This project re-enables that parallelism with LZO compressed files, and also comes with standard utilities (input/output streams, etc) for working with LZO files.
@@ -92,7 +92,7 @@ For example, if you are using `ivy`, add the repository in `ivysettings.xml`:
 
 And include hadoop-lzo as a dependency:
 ```xml
-  <dependency org="com.hadoop.gplcompression" name="hadoop-lzo" rev="0.4.15"/>
+  <dependency org="com.hadoop.gplcompression" name="hadoop-lzo" rev="0.4.17"/>
 ```
 
 ### Using Hadoop and LZO

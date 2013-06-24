@@ -2,7 +2,6 @@ package com.hadoop.mapreduce;
 
 import java.io.IOException;
 
-import com.hadoop.compression.lzo.LzoIndex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -11,6 +10,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import com.hadoop.compression.lzo.LzoIndex;
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 public class LzoIndexRecordWriter extends RecordWriter<Path, LongWritable> {
   private static final Log LOG = LogFactory.getLog(LzoIndexRecordWriter.class);
@@ -50,7 +52,7 @@ public class LzoIndexRecordWriter extends RecordWriter<Path, LongWritable> {
   }
 
   private FSDataOutputStream setupOutputFile(Path path) throws IOException {
-    fs = path.getFileSystem(context.getConfiguration());
+    fs = path.getFileSystem(CompatibilityUtil.getConfiguration(context));
     inputPath = path;
 
     // For /a/b/c.lzo, tmpIndexPath = /a/b/c.lzo.index.tmp,
