@@ -79,14 +79,12 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
 
   @Override
   public boolean nextKeyValue() throws IOException {
-    boolean eof = false;
 
     try {
       int uncompressedBlockSize = rawInputStream.readInt();
       if (uncompressedBlockSize == 0) {
         // An uncompressed block size of zero means end of file.
-        eof = true;
-        return false;
+        throw new EOFException("Normal EOF");
       } else if (uncompressedBlockSize < 0) {
         throw new EOFException("Could not read uncompressed block size at position " +
                                rawInputStream.getPos() + " in file " + lzoFile);
@@ -117,17 +115,19 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
       }
 
       return true;
+
     } catch (EOFException e) {
       // An EOF is ok. Mostly this is a truncated file wihtout proper lzop footer.
       // storing the index till the last lzo block present is the right thing to do.
       LOG.debug("Received EOFException.");
-      eof = true;
-      return false;
-
-    } finally {
-      if (eof && readSuccessCounter != null) {
+      if (readSuccessCounter != null) {
         CompatibilityUtil.incrementCounter(readSuccessCounter, 1);
       }
+      return false;
+
+    } catch (IOException e) {
+      LOG.warn("Exception while trying to read from " + lzoFile, e);
+      return false;
     }
   }
 
