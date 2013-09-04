@@ -5,9 +5,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 
 /**
@@ -20,8 +22,13 @@ public class CompatibilityUtil {
   private static final Constructor<?> TASK_ATTEMPT_CONTEXT_CONSTRUCTOR;
 
   private static final Method GET_CONFIGURATION;
+  private static final Method GET_COUNTER_ENUM_METHOD;
+  private static final Method INCREMENT_COUNTER_METHOD;
+  private static final Method GET_COUNTER_VALUE_METHOD;
+
 
   static {
+    final String PACKAGE = "org.apache.hadoop.mapreduce";
     boolean v2 = true;
     try {
       // use the presence of JobContextImpl as a test for 2.x
@@ -34,15 +41,35 @@ public class CompatibilityUtil {
     try {
       Class<?> taskAttemptContextCls =
         Class.forName(useV2 ?
-          "org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl" :
-          "org.apache.hadoop.mapreduce.TaskAttemptContext");
+          PACKAGE + ".task.TaskAttemptContextImpl" :
+          PACKAGE + ".TaskAttemptContext");
       TASK_ATTEMPT_CONTEXT_CONSTRUCTOR =
         taskAttemptContextCls.getConstructor(Configuration.class,
                                              TaskAttemptID.class);
 
       GET_CONFIGURATION =
-        Class.forName("org.apache.hadoop.mapreduce.JobContext")
+        Class.forName(PACKAGE + ".JobContext")
           .getMethod("getConfiguration");
+
+      INCREMENT_COUNTER_METHOD = Class.forName(PACKAGE+".Counter")
+          .getMethod("increment", Long.TYPE);
+
+      GET_COUNTER_VALUE_METHOD  = Class.forName(PACKAGE+".Counter").getMethod("getValue");
+
+      if (useV2) {
+        Method get_counter;
+        try {
+          get_counter = Class.forName(PACKAGE + ".TaskAttemptContext").getMethod("getCounter", Enum.class);
+        } catch (Exception e) {
+          get_counter = Class.forName(PACKAGE + ".TaskInputOutputContext").getMethod("getCounter",
+              String.class, String.class);
+        }
+        GET_COUNTER_ENUM_METHOD = get_counter;
+      } else {
+        GET_COUNTER_ENUM_METHOD = Class.forName(PACKAGE+".TaskInputOutputContext")
+            .getMethod("getCounter", String.class, String.class);
+      }
+
     } catch (SecurityException e) {
       throw new IllegalArgumentException("Can't run constructor ", e);
     } catch (NoSuchMethodException e) {
@@ -97,5 +124,28 @@ public class CompatibilityUtil {
    */
   public static Configuration getConfiguration(JobContext context) {
     return (Configuration)invoke(GET_CONFIGURATION, context);
+  }
+
+  /**
+   * Invoke getCounter() on TaskInputOutputContext. Works with both
+   * Hadoop 1 and 2.
+   */
+  public static Counter getCounter(TaskInputOutputContext context, Enum<?> counter) {
+    return (Counter) invoke(GET_COUNTER_ENUM_METHOD, context, counter);
+  }
+
+  /**
+   * Increment the counter. Works with both Hadoop 1 and 2
+   */
+  public static void incrementCounter(Counter counter, long increment) {
+    invoke(INCREMENT_COUNTER_METHOD, counter, increment);
+  }
+
+  /**
+   * Hadoop 1 & 2 compatible counter.getValue()
+   * @return {@link Counter#getValue()}
+   */
+  public static long getCounterValue(Counter counter) {
+    return (Long) invoke(GET_COUNTER_VALUE_METHOD, counter);
   }
 }
