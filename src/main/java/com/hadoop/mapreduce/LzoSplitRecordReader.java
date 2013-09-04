@@ -13,9 +13,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 import com.hadoop.compression.lzo.LzopDecompressor;
@@ -35,6 +37,11 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
   private int numCompressedChecksums = -1;
   private long totalFileSize = 0;
   private Path lzoFile;
+  private Counter readSuccessCounter = null;
+
+  public enum Counters {
+    READ_SUCCESS
+  }
 
   @Override
   public void initialize(InputSplit genericSplit, TaskAttemptContext taskAttemptContext) throws IOException {
@@ -43,6 +50,11 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
     lzoFile = fileSplit.getPath();
     // The LzoSplitInputFormat is not splittable, so the split length is the whole file.
     totalFileSize = fileSplit.getLength();
+
+    if (taskAttemptContext instanceof TaskInputOutputContext<?, ?, ?, ?>) {
+      readSuccessCounter = CompatibilityUtil.getCounter(
+          (TaskInputOutputContext<?, ?, ?, ?>) taskAttemptContext, Counters.READ_SUCCESS);
+    }
 
     // Jump through some hoops to create the lzo codec.
     Configuration conf = CompatibilityUtil.getConfiguration(context);
@@ -67,40 +79,56 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
 
   @Override
   public boolean nextKeyValue() throws IOException {
-    int uncompressedBlockSize = rawInputStream.readInt();
-    if (uncompressedBlockSize == 0) {
-      // An uncompressed block size of zero means end of file.
+    boolean eof = false;
+
+    try {
+      int uncompressedBlockSize = rawInputStream.readInt();
+      if (uncompressedBlockSize == 0) {
+        // An uncompressed block size of zero means end of file.
+        eof = true;
+        return false;
+      } else if (uncompressedBlockSize < 0) {
+        throw new EOFException("Could not read uncompressed block size at position " +
+                               rawInputStream.getPos() + " in file " + lzoFile);
+      }
+
+      int compressedBlockSize = rawInputStream.readInt();
+      if (compressedBlockSize <= 0) {
+        throw new EOFException("Could not read compressed block size at position " +
+                               rawInputStream.getPos() + " in file " + lzoFile);
+      }
+
+      // See LzopInputStream.getCompressedData
+      boolean isUncompressedBlock = (uncompressedBlockSize == compressedBlockSize);
+      int numChecksumsToSkip = isUncompressedBlock ?
+              numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
+
+      // Get the current position.  Since we've read two ints, the current block started 8 bytes ago.
+      long pos = rawInputStream.getPos();
+      curValue.set(pos - 8);
+      // Seek beyond the checksums and beyond the block data to the beginning of the next block.
+      rawInputStream.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
+      ++numBlocksRead;
+
+      // Log some progress every so often.
+      if (numBlocksRead % LOG_EVERY_N_BLOCKS == 0) {
+        LOG.info("Reading block " + numBlocksRead + " at pos " + pos + " of " + totalFileSize + ". Read is " +
+                 (100.0 * getProgress()) + "% done. ");
+      }
+
+      return true;
+    } catch (EOFException e) {
+      // An EOF is ok. Mostly this is a truncated file wihtout proper lzop footer.
+      // storing the index till the last lzo block present is the right thing to do.
+      LOG.debug("Received EOFException.");
+      eof = true;
       return false;
-    } else if (uncompressedBlockSize < 0) {
-      throw new EOFException("Could not read uncompressed block size at position " +
-                             rawInputStream.getPos() + " in file " + lzoFile);
+
+    } finally {
+      if (eof && readSuccessCounter != null) {
+        CompatibilityUtil.incrementCounter(readSuccessCounter, 1);
+      }
     }
-
-    int compressedBlockSize = rawInputStream.readInt();
-    if (compressedBlockSize <= 0) {
-      throw new EOFException("Could not read compressed block size at position " +
-                             rawInputStream.getPos() + " in file " + lzoFile);
-    }
-
-    // See LzopInputStream.getCompressedData
-    boolean isUncompressedBlock = (uncompressedBlockSize == compressedBlockSize);
-    int numChecksumsToSkip = isUncompressedBlock ?
-            numDecompressedChecksums : numDecompressedChecksums + numCompressedChecksums;
-
-    // Get the current position.  Since we've read two ints, the current block started 8 bytes ago.
-    long pos = rawInputStream.getPos();
-    curValue.set(pos - 8);
-    // Seek beyond the checksums and beyond the block data to the beginning of the next block.
-    rawInputStream.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
-    ++numBlocksRead;
-
-    // Log some progress every so often.
-    if (numBlocksRead % LOG_EVERY_N_BLOCKS == 0) {
-      LOG.info("Reading block " + numBlocksRead + " at pos " + pos + " of " + totalFileSize + ". Read is " +
-               (100.0 * getProgress()) + "% done. ");
-    }
-
-    return true;
   }
 
   @Override
