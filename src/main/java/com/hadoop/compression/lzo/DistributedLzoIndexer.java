@@ -114,17 +114,19 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       long successfulMappers = CompatibilityUtil.getCounterValue(
           job.getCounters().findCounter(LzoSplitRecordReader.Counters.READ_SUCCESS));
 
-      if (successfulMappers != inputPaths.size()) {
-        LOG.error("DistributedIndexer job " + job.getJobID() + " failed. "
-            + (inputPaths.size() - successfulMappers)
-            + " out of " + inputPaths.size() + " failed.");
+      if (successfulMappers == inputPaths.size()) {
+        return 0;
       }
-      return 1;
 
+      // some of the mappers failed
+      LOG.error("DistributedIndexer job " + job.getJobID() + " failed. "
+          + (inputPaths.size() - successfulMappers)
+          + " mappers out of " + inputPaths.size() + " failed.");
     } else {
-      LOG.warn("DistributedIndexer job " + job.getJobID() + " failed");
-      return 1; // failed
+      LOG.error("DistributedIndexer job " + job.getJobID() + " failed.");
     }
+
+    return 1; // failure
   }
 
   public static void main(String[] args) throws Exception {
