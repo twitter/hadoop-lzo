@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.hadoop.compression.lzo.util.CompatibilityUtil;
 import com.hadoop.mapreduce.LzoIndexOutputFormat;
 import com.hadoop.mapreduce.LzoSplitInputFormat;
+import com.hadoop.mapreduce.LzoSplitRecordReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
@@ -77,8 +79,8 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
 
     if (inputPaths.isEmpty()) {
-      System.err.println("No input paths found - perhaps all " +
-        ".lzo files have already been indexed.");
+      LOG.info("No input paths found - perhaps all " +
+          ".lzo files have already been indexed.");
       return 0;
     }
 
@@ -103,7 +105,26 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       FileInputFormat.addInputPath(job, p);
     }
 
-    return job.waitForCompletion(true) ? 0 : 1;
+    job.submit();
+
+    LOG.info("Started DistributedIndexer job " + job.getJobID() + " with " +
+        inputPaths.size() + " splits for " + Arrays.toString(args));
+
+    if (job.waitForCompletion(true)) {
+      long successfulMappers = CompatibilityUtil.getCounterValue(
+          job.getCounters().findCounter(LzoSplitRecordReader.Counters.READ_SUCCESS));
+
+      if (successfulMappers != inputPaths.size()) {
+        LOG.error("DistributedIndexer job " + job.getJobID() + " failed. "
+            + (inputPaths.size() - successfulMappers)
+            + " out of " + inputPaths.size() + " failed.");
+      }
+      return 1;
+
+    } else {
+      LOG.warn("DistributedIndexer job " + job.getJobID() + " failed");
+      return 1; // failed
+    }
   }
 
   public static void main(String[] args) throws Exception {
