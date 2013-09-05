@@ -107,7 +107,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
 
     job.submit();
 
-    LOG.info("Started DistributedIndexer job " + job.getJobID() + " with " +
+    LOG.info("Started DistributedIndexer " + job.getJobID() + " with " +
         inputPaths.size() + " splits for " + Arrays.toString(args));
 
     if (job.waitForCompletion(true)) {
@@ -119,9 +119,9 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       }
 
       // some of the mappers failed
-      LOG.error("DistributedIndexer job " + job.getJobID() + " failed. "
+      LOG.error("DistributedIndexer " + job.getJobID() + " failed. "
           + (inputPaths.size() - successfulMappers)
-          + " mappers out of " + inputPaths.size() + " failed.");
+          + " out of " + inputPaths.size() + " mappers failed.");
     } else {
       LOG.error("DistributedIndexer job " + job.getJobID() + " failed.");
     }

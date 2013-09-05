@@ -84,7 +84,10 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
       int uncompressedBlockSize = rawInputStream.readInt();
       if (uncompressedBlockSize == 0) {
         // An uncompressed block size of zero means end of file.
-        throw new EOFException("Normal EOF");
+        if (readSuccessCounter != null) {
+          CompatibilityUtil.incrementCounter(readSuccessCounter, 1);
+        }
+        return false;
       } else if (uncompressedBlockSize < 0) {
         throw new EOFException("Could not read uncompressed block size at position " +
                                rawInputStream.getPos() + " in file " + lzoFile);
@@ -104,8 +107,15 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
       // Get the current position.  Since we've read two ints, the current block started 8 bytes ago.
       long pos = rawInputStream.getPos();
       curValue.set(pos - 8);
+
       // Seek beyond the checksums and beyond the block data to the beginning of the next block.
-      rawInputStream.seek(pos + compressedBlockSize + (4 * numChecksumsToSkip));
+      long nextBlockOffset = pos + compressedBlockSize + (4 * numChecksumsToSkip);
+      if (nextBlockOffset < totalFileSize) {
+        rawInputStream.seek(nextBlockOffset);
+      } else { // truncated
+        throw new EOFException("truncated");
+      }
+
       ++numBlocksRead;
 
       // Log some progress every so often.
@@ -119,7 +129,7 @@ public class LzoSplitRecordReader extends RecordReader<Path, LongWritable> {
     } catch (EOFException e) {
       // An EOF is ok. Mostly this is a truncated file wihtout proper lzop footer.
       // storing the index till the last lzo block present is the right thing to do.
-      LOG.debug("Received EOFException.");
+      LOG.info("Received an EOFException. Mostly a truncated file, which is ok : ", e);
       if (readSuccessCounter != null) {
         CompatibilityUtil.incrementCounter(readSuccessCounter, 1);
       }
