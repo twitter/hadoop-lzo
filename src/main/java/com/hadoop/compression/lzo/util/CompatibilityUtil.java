@@ -61,8 +61,7 @@ public class CompatibilityUtil {
         try {
           get_counter = Class.forName(PACKAGE + ".TaskAttemptContext").getMethod("getCounter", Enum.class);
         } catch (Exception e) {
-          get_counter = Class.forName(PACKAGE + ".TaskInputOutputContext").getMethod("getCounter",
-              String.class, String.class);
+          get_counter = Class.forName(PACKAGE + ".TaskInputOutputContext").getMethod("getCounter", Enum.class);
         }
         GET_COUNTER_ENUM_METHOD = get_counter;
       } else {
