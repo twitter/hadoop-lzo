@@ -26,9 +26,9 @@ public class CompatibilityUtil {
   private static final Method INCREMENT_COUNTER_METHOD;
   private static final Method GET_COUNTER_VALUE_METHOD;
 
+  private static final String PACKAGE = "org.apache.hadoop.mapreduce";
 
   static {
-    final String PACKAGE = "org.apache.hadoop.mapreduce";
     boolean v2 = true;
     try {
       // use the presence of JobContextImpl as a test for 2.x
@@ -47,26 +47,20 @@ public class CompatibilityUtil {
         taskAttemptContextCls.getConstructor(Configuration.class,
                                              TaskAttemptID.class);
 
-      GET_CONFIGURATION =
-        Class.forName(PACKAGE + ".JobContext")
-          .getMethod("getConfiguration");
-
-      INCREMENT_COUNTER_METHOD = Class.forName(PACKAGE+".Counter")
-          .getMethod("increment", Long.TYPE);
-
-      GET_COUNTER_VALUE_METHOD  = Class.forName(PACKAGE+".Counter").getMethod("getValue");
+      GET_CONFIGURATION = getMethod(".JobContext", "getConfiguration");
+      INCREMENT_COUNTER_METHOD = getMethod(".Counter", "increment", Long.TYPE);
+      GET_COUNTER_VALUE_METHOD = getMethod(".Counter", "getValue");
 
       if (useV2) {
         Method get_counter;
         try {
-          get_counter = Class.forName(PACKAGE + ".TaskAttemptContext").getMethod("getCounter", Enum.class);
+          get_counter = getMethod(".TaskAttemptContext", "getCounter", Enum.class);
         } catch (Exception e) {
-          get_counter = Class.forName(PACKAGE + ".TaskInputOutputContext").getMethod("getCounter", Enum.class);
+          get_counter = getMethod(".TaskInputOutputContext", "getCounter", Enum.class);
         }
         GET_COUNTER_ENUM_METHOD = get_counter;
       } else {
-        GET_COUNTER_ENUM_METHOD = Class.forName(PACKAGE+".TaskInputOutputContext")
-            .getMethod("getCounter", String.class, String.class);
+        GET_COUNTER_ENUM_METHOD = getMethod(".TaskInputOutputContext", "getCounter", Enum.class);
       }
 
     } catch (SecurityException e) {
@@ -76,6 +70,15 @@ public class CompatibilityUtil {
     } catch (ClassNotFoundException e) {
       throw new IllegalArgumentException("Can't find class", e);
     }
+  }
+
+  /**
+   * Wrapper for Class.forName(className).getMethod(methodName, parmeterTypes);
+   */
+  private static Method getMethod(String className, String methodName, Class<?>... paramTypes)
+      throws ClassNotFoundException, NoSuchMethodException {
+    return Class.forName(className.startsWith(".") ? PACKAGE + className : className)
+        .getMethod(methodName, paramTypes);
   }
 
   /**
