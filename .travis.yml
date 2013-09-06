@@ -7,4 +7,4 @@ jdk:
   - openjdk6 # works with 7 too
 script:
   - mvn test
-  - mvn test -P hadoop-old
+  - mvn clean test -P hadoop-old
