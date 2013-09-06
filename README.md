@@ -22,6 +22,8 @@ You can read more about Hadoop, LZO, and how we're using it at Twitter at [http:
 
 To get started, see [http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ](http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ).  This project is built exactly the same way; please follow the answer to "How do I configure Hadoop to use these classes?" on that page, or follow the summarized version here.
 
+You need JDK 1.6 or higher to build hadoop-lzo (1.7 or higher on Mac OS).
+
 LZO 2.x is required, and most easily installed via the package manager on your system. If you choose to install manually for whatever reason (developer OSX machines is a common use-case) this is accomplished as follows:
 
 1. Download the latest LZO release from http://www.oberhumer.com/opensource/lzo/
