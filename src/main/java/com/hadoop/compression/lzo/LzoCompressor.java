@@ -55,6 +55,7 @@ class LzoCompressor implements Compressor {
   @SuppressWarnings("unused")
   private long lzoCompressor = 0;       // The actual lzo compression function.
   private int workingMemoryBufLen = 0;  // The length of 'working memory' buf.
+  private long lzoCompressLevelFunc = 0; // The lzo compression level function.
   @SuppressWarnings("unused")
   private ByteBuffer workingMemoryBuf;      // The 'working memory' for lzo.
   private int lzoCompressionLevel;
