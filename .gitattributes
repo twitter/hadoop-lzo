@@ -1,1 +1,6 @@
 .archive-version export-subst
+
+# Auto detect text files and perform LF normalization
+*         text=auto
+*.sln     text merge=union eol=crlf
+*.vcxproj text merge=union eol=crlf

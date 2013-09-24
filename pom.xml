@@ -88,6 +88,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <hadoop.current.version>2.1.0-beta</hadoop.current.version>
+    <hadoop.old.version>1.0.4</hadoop.old.version>
   </properties>
 
   <profiles>
@@ -100,13 +102,13 @@
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-common</artifactId>
-          <version>2.0.4-alpha</version>
+          <version>${hadoop.current.version}</version>
           <scope>provided</scope>
         </dependency>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-mapreduce-client-core</artifactId>
-          <version>2.0.4-alpha</version>
+          <version>${hadoop.current.version}</version>
           <scope>provided</scope>
         </dependency>
       </dependencies>
@@ -120,13 +122,13 @@
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-core</artifactId>
-          <version>1.0.4</version>
+          <version>${hadoop.old.version}</version>
           <scope>provided</scope>
         </dependency>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-test</artifactId>
-          <version>1.0.4</version>
+          <version>${hadoop.old.version}</version>
           <scope>provided</scope>
         </dependency>
       </dependencies>
@@ -147,17 +149,36 @@
       </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
         <executions>
           <execution>
-            <id>set-props</id>
+            <id>check-platform</id>
             <phase>initialize</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
               <exportAntProperties>true</exportAntProperties>
-              <target name="set-props" description="sets key properties that are used throughout">
+              <target name="check-platform">
+                <condition property="windows">
+                  <os family="windows" />
+                </condition>
+                <condition property="non-windows">
+                  <not>
+                    <isset property="windows" />
+                  </not>
+                </condition>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>set-props-non-win</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target name="set-props-non-win" description="sets key properties that are used throughout" if="non-windows">
                 <exec executable="sed" inputstring="${os.name}" outputproperty="nonspace.os">
                   <arg value="s/ /_/g"/>
                 </exec>
@@ -170,17 +191,35 @@
             </configuration>
           </execution>
           <execution>
-            <id>build-info</id>
+            <id>set-props-win</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target name="set-props-win" description="sets key properties that are used throughout" if="windows">
+                <property name="build.native" value="${project.build.directory}/native/${env.OS}-${env.PLATFORM}"/>
+                <property name="native.src.dir" value="${basedir}/src/main/native"/>
+                <property name="test.build.dir" value="${project.build.directory}/test-classes"/>
+                <property name="test.log.dir" value="${test.build.dir}/logs"/>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build-info-non-win</id>
             <phase>compile</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
-              <target name="build-info" description="generates build.properties">
+              <target name="build-info-non-win" description="generates build.properties" if="non-windows">
                 <tstamp>
                   <format property="build_time" pattern="MM/dd/yyyy hh:mm aa" timezone="GMT"/>
                 </tstamp>
-                <exec executable="${basedir}/scripts/get_build_revision.sh" outputproperty="build_revision"/>
+                <exec executable="sh" outputproperty="build_revision">
+                  <arg value="${basedir}/scripts/get_build_revision.sh" />
+                </exec>
                 <exec executable="whoami" outputproperty="build_author"/>
                 <exec executable="uname" outputproperty="build_os">
                   <arg value="-a"/>
@@ -197,28 +236,68 @@
             </configuration>
           </execution>
           <execution>
-            <id>check-native-uptodate</id>
+            <id>build-info-win</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target name="build-info-win" description="generates build.properties" if="windows">
+                <tstamp>
+                  <format property="build_time" pattern="MM/dd/yyyy hh:mm aa" timezone="GMT"/>
+                </tstamp>
+                <exec executable="sh" outputproperty="build_revision">
+                  <arg value="${basedir}/scripts/get_build_revision.sh" />
+                </exec>
+                <propertyfile file="${project.build.outputDirectory}/build.properties"
+                    comment="This file is automatically generated - DO NOT EDIT">
+                  <entry key="build_time" value="${build_time}"/>
+                  <entry key="build_revision" value="${build_revision}"/>
+                  <entry key="build_author" value="${env.USERNAME}"/>
+                  <entry key="build_version" value="${project.version}"/>
+                  <entry key="build_os" value="${env.OS}"/>
+                </propertyfile>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>check-native-uptodate-non-win</id>
             <phase>compile</phase>
             <goals>
               <goal>run</goal>
             </goals>
             <configuration>
               <exportAntProperties>true</exportAntProperties>
-                <target name="check-native-uptodate" description="checks if native binaries should be rebuilt">
-                  <uptodate property="native.uptodate" targetfile="${build.native}/lib/libgplcompression.la">
-                    <srcfiles dir="${native.src.dir}" includes="**/*"/>
-                  </uptodate>
-                </target>
-              </configuration>
-            </execution>
-            <execution>
-              <id>build-native</id>
-              <phase>compile</phase>
-              <goals>
-                <goal>run</goal>
-              </goals>
-              <configuration>
-              <target name="build-native" unless="native.uptodate" description="compiles native code">
+              <target name="check-native-uptodate-non-win" description="checks if native binaries should be rebuilt" if="non-windows">
+                <uptodate property="native.uptodate" targetfile="${build.native}/lib/libgplcompression.la">
+                  <srcfiles dir="${native.src.dir}" includes="**/*"/>
+                </uptodate>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>check-native-uptodate-win</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target name="check-native-uptodate-win" description="checks if native binaries should be rebuilt" if="windows">
+                <uptodate property="native.uptodate" targetfile="${build.native}/lib/gplcompression.dll">
+                  <srcfiles dir="${native.src.dir}" includes="**/*"/>
+                </uptodate>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build-native-non-win</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target name="build-native-non-win" if="non-windows" unless="native.uptodate" description="compiles native code">
                 <property name="make.cmd" value="make"/>
                 <property name="build.classes" refid="maven.compile.classpath"/>
                 <condition property="native.ldflags" value="" else="-Wl,--no-as-needed">
@@ -255,6 +334,39 @@
                 <exec dir="${build.native}" executable="sh" failonerror="true">
                   <arg line="${build.native}/libtool --mode=install cp ${build.native}/libgplcompression.la ${build.native}/lib"/>
                 </exec>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>build-native-win</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target name="build-native-win" unless="native.uptodate" if="windows" description="compiles native code">
+                <property name="build.classes" refid="maven.compile.classpath"/>
+
+                <mkdir dir="${build.native}/lib"/>
+                <mkdir dir="${build.native}/src/com/hadoop/compression/lzo"/>
+
+                <javah classpath="${build.classes}"
+                    destdir="${build.native}/src/com/hadoop/compression/lzo"
+                    force="yes"
+                    verbose="yes">
+                  <class name="com.hadoop.compression.lzo.LzoCompressor" />
+                  <class name="com.hadoop.compression.lzo.LzoDecompressor" />
+                </javah>
+
+                <exec dir="${build.native}" executable="msbuild" failonerror="true">
+                  <arg value="${basedir}/src/main/native/gplcompression.sln" />
+                  <arg value="/nologo" />
+                  <arg value="/p:Configuration=Release" />
+                  <arg value="/p:IntDir=${build.native}/" />
+                  <arg value="/p:OutDir=${build.native}/" />
+                </exec>
+
+                <copy file="${build.native}/gplcompression.dll" todir="${build.native}/lib" />
               </target>
             </configuration>
           </execution>
@@ -355,6 +467,16 @@
               </pluginExecutions>
             </lifecycleMappingMetadata>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>1.3.1</version>
         </plugin>
       </plugins>
     </pluginManagement>

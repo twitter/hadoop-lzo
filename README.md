@@ -29,12 +29,21 @@ LZO 2.x is required, and most easily installed via the package manager on your s
 1. Download the latest LZO release from http://www.oberhumer.com/opensource/lzo/
 1. Configure LZO to build a shared library (required) and use a package-specific prefix (optional but recommended): `./configure --enable-shared --prefix /usr/local/lzo-2.06`
 1. Build and install LZO: `make && sudo make install`
+1. On Windows, you can build lzo2.dll with this command: `B\win64\vc_dll.bat`
 
 Now let's build hadoop-lzo.
 
     C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
     LIBRARY_PATH=/usr/local/lzo-2.06/lib \
       mvn clean test
+
+Running tests on Windows also requires setting PATH to include the location of lzo2.dll.
+
+    set PATH=C:\lzo-2.06;%PATH%
+
+Additionally on Windows, the Hadoop core code requires setting HADOOP_HOME so that the tests can find winutils.exe.  If you've built Hadoop trunk in directory C:\hdc, then the following would work.
+
+    set HADOOP_HOME=C:\hdc\hadoop-common-project\hadoop-common\target
 
 Once the libs are built and installed, you may want to add them to the class paths and library paths.  That is, in hadoop-env.sh, set
 
