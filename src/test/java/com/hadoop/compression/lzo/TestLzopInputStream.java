@@ -55,7 +55,7 @@ public class TestLzopInputStream extends TestCase {
    * Test against a 100,000 line file with multiple LZO blocks.
    */
   public void testBigFile() throws NoSuchAlgorithmException, IOException,
-  InterruptedException {    
+  InterruptedException {
     runTest(bigFile);
   }
 
@@ -63,22 +63,22 @@ public class TestLzopInputStream extends TestCase {
    * Test against a 1,000 line file with a single LZO block.
    */
   public void testMediumFile() throws NoSuchAlgorithmException, IOException,
-  InterruptedException {    
+  InterruptedException {
     runTest(mediumFile);
   }
 
   /**
    * Test against a 100 line file that is a single LZO block.  Moreover, this
-   * file compresses to a size larger than its uncompressed size, so the LZO 
+   * file compresses to a size larger than its uncompressed size, so the LZO
    * format mandates that it's stored differently on disk.  Instead of the usual block
-   * format, which is 
+   * format, which is
    * uncompressed size | compressed size | uncompressed checksum | compressed checksum | compressed data
    * in this case the block gets stored as
    * uncompressed size | uncompressed size | uncompressed checksum | uncompressed data
    * with no additional checksum.  Thus the read has to follow a slightly different codepath.
    */
   public void testSmallFile() throws NoSuchAlgorithmException, IOException,
-  InterruptedException {    
+  InterruptedException {
     runTest(smallFile);
   }
 
@@ -88,6 +88,16 @@ public class TestLzopInputStream extends TestCase {
   public void testEmptyFile() throws NoSuchAlgorithmException, IOException,
   InterruptedException {
     runTest(emptyFile);
+  }
+
+  /**
+   * Test reading a truncated lzo file which does not have a proper footer.
+   * It should read all the bytes till the end of the last good block and
+   * the reader should terminate normally.
+   */
+  public void testTruncatedFile() throws NoSuchAlgorithmException, IOException,
+  InterruptedException {
+    runTest("100000-truncated.txt");
   }
 
   /**
@@ -132,7 +142,7 @@ public class TestLzopInputStream extends TestCase {
     }
     // Verify that the lzo file is also exhausted at this point.
     assertNull(lzoBr.readLine());
-    
+
     textBr.close();
     lzoBr.close();
   }

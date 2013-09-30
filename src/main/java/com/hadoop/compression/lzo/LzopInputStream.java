@@ -230,6 +230,10 @@ public class LzopInputStream extends BlockDecompressorStream {
 
   @Override
   protected int decompress(byte[] b, int off, int len) throws IOException {
+    if (eof) {
+      return -1;
+    }
+
     // Check if we are the beginning of a block
     if (noUncompressedBytes == uncompressedBlockSize) {
       // Get original data size
@@ -238,6 +242,7 @@ public class LzopInputStream extends BlockDecompressorStream {
         uncompressedBlockSize =  readInt(in, tempBuf, 4);
         noCompressedBytes += 4;
       } catch (EOFException e) {
+        eof = true;
         return -1;
       }
       noUncompressedBytes = 0;
