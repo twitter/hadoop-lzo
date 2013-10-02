@@ -6,5 +6,5 @@ env:
 jdk:
   - openjdk6 # works with 7 too
 script:
-  - mvn test
-  - mvn clean test -P hadoop-old
+  - mvn test # build with hadoop 2 and test against hadoop 2
+  - mvn test -P hadoop-old # build with hadoop 2 and test against hadoop 1
