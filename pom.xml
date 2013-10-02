@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.hadoop.gplcompression</groupId>
   <artifactId>hadoop-lzo</artifactId>
-  <version>0.4.19-SNAPSHOT</version>
+  <version>0.4.19</version>
   <packaging>jar</packaging>
   <name>hadoop-lzo</name>
   <description>Hadoop-lzo library (Twitter)</description>
