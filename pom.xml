@@ -184,6 +184,7 @@
                 </exec>
                 <property name="build.platform" value="${nonspace.os}-${os.arch}-${sun.arch.data.model}"/>
                 <property name="build.native" value="${project.build.directory}/native/${build.platform}"/>
+                <property name="build.native.target" value="${project.build.outputDirectory}/native/${build.platform}"/>
                 <property name="native.src.dir" value="${basedir}/src/main/native"/>
                 <property name="test.build.dir" value="${project.build.directory}/test-classes"/>
                 <property name="test.log.dir" value="${test.build.dir}/logs"/>
@@ -200,6 +201,7 @@
               <exportAntProperties>true</exportAntProperties>
               <target name="set-props-win" description="sets key properties that are used throughout" if="windows">
                 <property name="build.native" value="${project.build.directory}/native/${env.OS}-${env.PLATFORM}"/>
+                <property name="build.native.target" value="${project.build.outputDirectory}/native/${build.platform}"/>
                 <property name="native.src.dir" value="${basedir}/src/main/native"/>
                 <property name="test.build.dir" value="${project.build.directory}/test-classes"/>
                 <property name="test.log.dir" value="${test.build.dir}/logs"/>
@@ -269,7 +271,7 @@
             <configuration>
               <exportAntProperties>true</exportAntProperties>
               <target name="check-native-uptodate-non-win" description="checks if native binaries should be rebuilt" if="non-windows">
-                <uptodate property="native.uptodate" targetfile="${build.native}/lib/libgplcompression.la">
+                <uptodate property="native.uptodate" targetfile="${build.native.target}/lib/libgplcompression.la">
                   <srcfiles dir="${native.src.dir}" includes="**/*"/>
                 </uptodate>
               </target>
@@ -284,7 +286,7 @@
             <configuration>
               <exportAntProperties>true</exportAntProperties>
               <target name="check-native-uptodate-win" description="checks if native binaries should be rebuilt" if="windows">
-                <uptodate property="native.uptodate" targetfile="${build.native}/lib/gplcompression.dll">
+                <uptodate property="native.uptodate" targetfile="${build.native.target}/lib/gplcompression.dll">
                   <srcfiles dir="${native.src.dir}" includes="**/*"/>
                 </uptodate>
               </target>
@@ -305,6 +307,7 @@
                 </condition>
 
                 <mkdir dir="${build.native}/lib"/>
+                <mkdir dir="${build.native.target}/lib"/>
                 <mkdir dir="${build.native}/src/com/hadoop/compression/lzo"/>
 
                 <javah classpath="${build.classes}"
@@ -334,6 +337,10 @@
                 <exec dir="${build.native}" executable="sh" failonerror="true">
                   <arg line="${build.native}/libtool --mode=install cp ${build.native}/libgplcompression.la ${build.native}/lib"/>
                 </exec>
+
+                <copy todir="${build.native.target}/lib">
+                  <fileset dir="${build.native}/lib"/>
+                </copy>
               </target>
             </configuration>
           </execution>
@@ -348,6 +355,7 @@
                 <property name="build.classes" refid="maven.compile.classpath"/>
 
                 <mkdir dir="${build.native}/lib"/>
+                <mkdir dir="${build.native.target}/lib"/>
                 <mkdir dir="${build.native}/src/com/hadoop/compression/lzo"/>
 
                 <javah classpath="${build.classes}"
@@ -367,6 +375,10 @@
                 </exec>
 
                 <copy file="${build.native}/gplcompression.dll" todir="${build.native}/lib" />
+
+                <copy todir="${build.native.target}/lib">
+                  <fileset dir="${build.native}/lib"/>
+                </copy>
               </target>
             </configuration>
           </execution>
@@ -405,7 +417,7 @@
         <version>2.14.1</version>
         <configuration>
           <reuseForks>false</reuseForks>
-          <argLine>-Djava.library.path=${build.native}/lib</argLine>
+          <argLine>-Djava.library.path=${build.native.target}/lib</argLine>
             <systemPropertyVariables>
               <test.build.data>${project.build.directory}/test-classes/data</test.build.data>
               <hadoop.log.dir>${test.log.dir}</hadoop.log.dir>
