@@ -200,7 +200,8 @@
             <configuration>
               <exportAntProperties>true</exportAntProperties>
               <target name="set-props-win" description="sets key properties that are used throughout" if="windows">
-                <property name="build.native" value="${project.build.directory}/native/${env.OS}-${env.PLATFORM}"/>
+                <property name="build.platform" value="${env.OS}-${env.PLATFORM}"/>
+                <property name="build.native" value="${project.build.directory}/native/${build.platform}"/>
                 <property name="build.native.target" value="${project.build.outputDirectory}/native/${build.platform}"/>
                 <property name="native.src.dir" value="${basedir}/src/main/native"/>
                 <property name="test.build.dir" value="${project.build.directory}/test-classes"/>
