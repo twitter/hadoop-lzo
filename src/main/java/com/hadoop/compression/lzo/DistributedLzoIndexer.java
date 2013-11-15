@@ -43,7 +43,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
         for (FileStatus childStatus : children) {
           walkPath(childStatus.getPath(), pathFilter, accumulator);
         }
-      } else if (path.toString().endsWith(LZO_EXTENSION)) {
+      } else if (path.toString().endsWith(LZO_EXTENSION) && fileStatus.getLen() > fileStatus.getBlockSize()) {
         Path lzoIndexPath = path.suffix(LzoIndex.LZO_INDEX_SUFFIX);
         if (fs.exists(lzoIndexPath)) {
           // If the index exists and is of nonzero size, we're already done.
