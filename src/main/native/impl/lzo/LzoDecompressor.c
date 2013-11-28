@@ -256,23 +256,9 @@ Java_com_hadoop_compression_lzo_LzoDecompressor_decompressBytesDirect(
   rv = fptr(compressed_bytes, compressed_direct_buf_len, uncompressed_bytes,
     &no_uncompressed_bytes, NULL); 
 
-  if (rv == LZO_E_OK) {
-    // lzo decompresses all input data
-    (*env)->SetIntField(env, this, LzoDecompressor_compressedDirectBufLen, 0);
-  } else {
-#ifdef UNIX
-    snprintf(exception_msg, MSG_LEN, "%s returned: %d", 
-              lzo_decompressor_function, rv);
-#endif
+  // lzo decompresses all input data
+  (*env)->SetIntField(env, this, LzoDecompressor_compressedDirectBufLen, 0);
 
-#ifdef WINDOWS
-    _snprintf_s(exception_msg, MSG_LEN, _TRUNCATE, "%s returned: %d",
-      lzo_decompressor_function, rv);
-#endif
-
-    THROW(env, "java/lang/InternalError", exception_msg);
-  }
-  
   return (jint)no_uncompressed_bytes;
 }
 
