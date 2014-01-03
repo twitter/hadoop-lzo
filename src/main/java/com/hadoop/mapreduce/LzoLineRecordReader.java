@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.LineReader;
 
+import com.google.common.base.Charsets;
 import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 /**
@@ -102,8 +103,15 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     // open the file and seek to the start of the split
     fileIn = fs.open(split.getPath());
 
+    // load the custom line delimiter if one is set
+    final String delimiter = job.get("textinputformat.record.delimiter");
+    byte[] recordDelimiterBytes = null;
+    if (null != delimiter) {
+      recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);
+    }
+
     // creates input stream and also reads the file header
-    in = new LineReader(codec.createInputStream(fileIn), job);
+    in = new LineReader(codec.createInputStream(fileIn), job, recordDelimiterBytes);
 
     if (start != 0) {
       fileIn.seek(start);
