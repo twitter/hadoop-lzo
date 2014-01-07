@@ -43,6 +43,18 @@ import com.hadoop.compression.lzo.util.CompatibilityUtil;
  */
 public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
 
+	protected static final boolean supportsCustomDelimiters;
+	static {
+		boolean hasConstructor = false;
+		try{
+			RecordReader.class.getConstructor(java.io.InputStream.class, org.apache.hadoop.conf.Configuration.class, byte[].class);
+			hasConstructor = true;
+		} catch (NoSuchMethodException e) {
+		} catch (SecurityException e) {
+		}
+		supportsCustomDelimiters = hasConstructor;
+	}
+
   private long start;
   private long pos;
   private long end;
@@ -111,7 +123,15 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     }
 
     // creates input stream and also reads the file header
-    in = new LineReader(codec.createInputStream(fileIn), job, recordDelimiterBytes);
+    if(supportsCustomDelimiters && recordDelimiterBytes != null) {
+      in = new LineReader(codec.createInputStream(fileIn), job, recordDelimiterBytes);
+    } else if(!supportsCustomDelimiters && recordDelimiterBytes != null) {
+      // TODO: log.warn("Cannot use customDelimiter " + delimiter + " for LZO files because your Hadoop installation doesn't support the LineReader(InputStream, Configuration, byte[]) constructor.  Consider updating to a distribution of Hadoop that includes the patch in HADOOP-7096");
+      // https://issues.apache.org/jira/browse/HADOOP-7096
+      in = new LineReader(codec.createInputStream(fileIn), job);
+    } else { // recordDelimiterBytes == null
+      in = new LineReader(codec.createInputStream(fileIn), job);
+    }
 
     if (start != 0) {
       fileIn.seek(start);
