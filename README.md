@@ -126,6 +126,6 @@ Either way, after 10-20 seconds there will be a file named big_file.lzo.index.  
 
 #### Running MR Jobs over Indexed Files
 
-Now run any job, say wordcount, over the new file.  In Java-based M/R jobs, just replace any uses of TextInputFormat by LzoTextInputFormat.  In streaming jobs, add "-inputformat com.hadoop.mapred.DeprecatedLzoTextInputFormat" (streaming still uses the old APIs, and needs a class that inherits from org.apache.hadoop.mapred.InputFormat).  For Pig jobs, email me or check the pig list -- I have custom LZO loader classes that work but are not (yet) contributed back.
+Now run any job, say wordcount, over the new file.  In Java-based M/R jobs, just replace any uses of TextInputFormat by LzoTextInputFormat.  In streaming jobs, add "-inputformat com.hadoop.mapred.DeprecatedLzoTextInputFormat" (streaming still uses the old APIs, and needs a class that inherits from org.apache.hadoop.mapred.InputFormat). Note that to use the DeprecatedLzoTextInputFormat properly with hadoop-streaming, you should also set the jobconf property `stream.map.input.ignoreKey=true`. That will replicate the behavior of the default TextInputFormat by stripping off the byte offset keys from the input lines that get piped to the mapper process. For Pig jobs, email me or check the pig list -- I have custom LZO loader classes that work but are not (yet) contributed back.
 
 Note that if you forget to index an .lzo file, the job will work but will process the entire file in a single split, which will be less efficient.
