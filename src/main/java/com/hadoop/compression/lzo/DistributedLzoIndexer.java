@@ -126,10 +126,10 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     this.conf = getConf();
 
     this.skipIndexingSmallFiles =
-        this.conf.getBoolean(SKIP_INDEXING_SMALL_FILES_KEY, false);
+        this.conf.getBoolean(SKIP_INDEXING_SMALL_FILES_KEY, this.SKIP_INDEXING_SMALL_FILES_DEFAULT);
 
     // Find paths to index based on recursive/not
-    this.recursiveIndexing = this.conf.getBoolean(RECURSIVE_INDEXING_KEY, true);
+    this.recursiveIndexing = this.conf.getBoolean(RECURSIVE_INDEXING_KEY, this.RECURSIVE_INDEXING_DEFAULT);
     List<Path> inputPaths = new ArrayList<Path>();
     for (String strPath : args) {
       visitPath(new Path(strPath), nonTemporaryFilter, inputPaths, this.recursiveIndexing);
