@@ -28,19 +28,19 @@ import org.apache.hadoop.util.ToolRunner;
 public class DistributedLzoIndexer extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(DistributedLzoIndexer.class);
 
-  private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
+  private static final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
 
-  private final String LZO_SKIP_INDEXING_SMALL_FILES_KEY = "lzo_skip_indexing_small_files";
-  private final String LZO_SMALL_FILE_SIZE_KEY = "lzo_small file_size";
-  private final String LZO_RECURSIVE_INDEXING_KEY = "lzo_recursive_indexing";
-  private final boolean LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT = false;
-  private final boolean LZO_RECURSIVE_INDEXING_DEFAULT = true;
-  private final long LZO_SMALL_FILE_SIZE_DEFAULT = Long.MIN_VALUE;
-  private boolean lzoSkipIndexingSmallFiles = this.LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT;
-  private boolean lzoRecursiveIndexing = this.LZO_RECURSIVE_INDEXING_DEFAULT;
-  private long lzoSmallFileSize = this.LZO_SMALL_FILE_SIZE_DEFAULT;
+  private static final String LZO_SKIP_INDEXING_SMALL_FILES_KEY = "lzo_skip_indexing_small_files";
+  private static final String LZO_SMALL_FILE_SIZE_KEY = "lzo_small_file_size";
+  private static final String LZO_RECURSIVE_INDEXING_KEY = "lzo_recursive_indexing";
+  private static final boolean LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT = false;
+  private static final boolean LZO_RECURSIVE_INDEXING_DEFAULT = true;
+  private static final long LZO_SMALL_FILE_SIZE_DEFAULT = 0;
+  private boolean lzoSkipIndexingSmallFiles = LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT;
+  private boolean lzoRecursiveIndexing = LZO_RECURSIVE_INDEXING_DEFAULT;
+  private long lzoSmallFileSize = LZO_SMALL_FILE_SIZE_DEFAULT;
 
-  private final String TEMP_FILE_EXTENSION = "/_temporary";
+  private static final String TEMP_FILE_EXTENSION = "/_temporary";
 
   private Configuration conf = getConf();
 
@@ -55,23 +55,12 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   };
 
   /**
-   * Accepts paths pointing to files with length >= lzoSmallFileSize.
+   * Returns whether a file should be considered small enough to skip indexing.
    */
-  private final PathFilter bigFileFilter = new PathFilter() {
-    @Override
-    public boolean accept(Path path) {
-      FileStatus status;
-      try {
-        FileSystem fs = path.getFileSystem(conf);
-        status = fs.getFileStatus(path);
-      } catch (IOException e) {
-        LOG.info("Unable to get status of path " + path);
-        return false;
-      }
-      return status.getLen() >= lzoSmallFileSize ? true : false;
-    }
-  };
-
+  private boolean isSmallFile(FileStatus status) {
+    return status.getLen() < lzoSmallFileSize;
+  }
+  
   private void visitPath(Path path, PathFilter pathFilter, List<Path> accumulator, boolean recursive) {
     try {
       FileSystem fs = path.getFileSystem(this.conf);
@@ -97,7 +86,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   private boolean shouldIndexPath(FileStatus fileStatus, FileSystem fs) throws IOException {
     Path path = fileStatus.getPath();
     if (path.toString().endsWith(LZO_EXTENSION)) {
-      if (this.lzoSkipIndexingSmallFiles && !this.bigFileFilter.accept(path)) {
+      if (this.lzoSkipIndexingSmallFiles && isSmallFile(fileStatus)) {
         LOG.info("[SKIP] Skip indexing small files enabled and " + path + " is too small");
         return false;
       }
@@ -128,9 +117,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       ToolRunner.printGenericCommandUsage(System.err);
       return -1;
     }
-
-    this.conf = getConf();
-
+    
     this.lzoSkipIndexingSmallFiles =
         this.conf.getBoolean(this.LZO_SKIP_INDEXING_SMALL_FILES_KEY, this.LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT);
 
