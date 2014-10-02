@@ -83,10 +83,10 @@ public class LzoCodec implements Configurable, CompressionCodec {
   }
 
   /**
-   * Check if native-lzo library is loaded & initialized.
+   * Check if native-lzo library is loaded and initialized.
    *
    * @param conf configuration
-   * @return <code>true</code> if native-lzo library is loaded & initialized;
+   * @return <code>true</code> if native-lzo library is loaded and initialized;
    *         else <code>false</code>
    */
   public static boolean isNativeLzoLoaded(Configuration conf) {
