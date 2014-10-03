@@ -166,7 +166,7 @@ class LzoDecompressor implements Decompressor {
   /**
    * Check if lzo decompressors are loaded and initialized.
    * 
-   * @return <code>true</code> if lzo decompressors are loaded & initialized,
+   * @return <code>true</code> if lzo decompressors are loaded and initialized,
    *         else <code>false</code> 
    */
   public static boolean isNativeLzoLoaded() {
