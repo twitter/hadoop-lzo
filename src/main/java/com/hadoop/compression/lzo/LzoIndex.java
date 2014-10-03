@@ -69,6 +69,7 @@ public class LzoIndex {
 
   /**
    * Get the total number of blocks in the index file.
+   * @return the total number of blocks
    */
   public int getNumberOfBlocks() {
     return blockPositions_.length;
@@ -76,10 +77,11 @@ public class LzoIndex {
 
   /**
    * Get the block offset for a given block.
-   * @param block
+   * @param block the given block
    * @return the byte offset into the file where this block starts.  It is the developer's
    * responsibility to call getNumberOfBlocks() to know appropriate bounds on the parameter.
-   * The argument block should satisfy 0 <= block < getNumberOfBlocks().
+   * The argument block should satisfy block is equal to zero or more and less than 
+   * getNumberOfBlocks().
    */
   public long getPosition(int block) {
     return blockPositions_[block];
@@ -163,7 +165,8 @@ public class LzoIndex {
    * @param fs The index file is on this file system.
    * @param lzoFile the file whose index we are reading -- NOT the index file itself.  That is,
    * pass in filename.lzo, not filename.lzo.index, for this parameter.
-   * @throws IOException
+   * @throws IOException if file not found
+   * @return LzoIndex 
    */
   public static LzoIndex readIndex(FileSystem fs, Path lzoFile) throws IOException {
     FSDataInputStream indexIn = null;
@@ -200,7 +203,7 @@ public class LzoIndex {
    * @param fs File system that contains the file.
    * @param lzoFile the lzo file to index.  For filename.lzo, the created index file will be
    * filename.lzo.index.
-   * @throws IOException
+   * @throws IOException if could not find codec
    */
   public static void createIndex(FileSystem fs, Path lzoFile)
   throws IOException {

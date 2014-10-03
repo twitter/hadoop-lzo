@@ -45,8 +45,8 @@ public class LzoIndexer {
   /**
    * Index the file given by lzoUri in its default filesystem.
    * 
-   * @param lzoUri The file to index.
-   * @throws IOException
+   * @param lzoPath The file to index.
+   * @throws IOException if file not found
    */
   public void index(Path lzoPath) throws IOException {
     indexInternal(lzoPath, 0);
@@ -124,6 +124,7 @@ public class LzoIndexer {
 
   /**
    * Run the LzoIndexer on each argument passed via stdin.  The files should be HDFS locations.
+   * @param args arguments
    */
   public static void main(String[] args) {
     if (args.length == 0) {
