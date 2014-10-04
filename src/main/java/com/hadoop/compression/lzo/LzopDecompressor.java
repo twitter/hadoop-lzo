@@ -98,7 +98,7 @@ public class LzopDecompressor extends LzoDecompressor {
    * decompressed data.
    * @param typ The checksum type
    * @param checksum The checksum of decompressed data  
-   * @return true or false
+   * @return Whether the checksum is correct
    */
   public synchronized boolean verifyDChecksum(DChecksum typ, int checksum) {
     return (checksum == (int)chkDMap.get(typ).getValue());
@@ -109,7 +109,7 @@ public class LzopDecompressor extends LzoDecompressor {
    * compressed data.
    * @param typ The checksum type
    * @param checksum The checksum of compressed data
-   * @return true or false
+   * @return Whether the checksum is correct
    */
   public synchronized boolean verifyCChecksum(CChecksum typ, int checksum) {
     return (checksum == (int)chkCMap.get(typ).getValue());

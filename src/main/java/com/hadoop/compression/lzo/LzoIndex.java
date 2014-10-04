@@ -80,8 +80,7 @@ public class LzoIndex {
    * @param block the given block
    * @return the byte offset into the file where this block starts.  It is the developer's
    * responsibility to call getNumberOfBlocks() to know appropriate bounds on the parameter.
-   * The argument block should satisfy block is equal to zero or more and less than 
-   * getNumberOfBlocks().
+   * The argument block should satisfy 0 &le; block &lt; getNumberOfBlocks().
    */
   public long getPosition(int block) {
     return blockPositions_[block];

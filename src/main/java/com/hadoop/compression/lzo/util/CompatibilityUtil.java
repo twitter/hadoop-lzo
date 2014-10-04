@@ -83,7 +83,7 @@ public class CompatibilityUtil {
 
   /**
    * Returns true whether the runtime hadoop version is 2.x, false otherwise.
-   * @return true or false
+   * @return Whether the runtime hadoop version is 2.x
    */
   public static boolean isVersion2x() {
     return useV2;
