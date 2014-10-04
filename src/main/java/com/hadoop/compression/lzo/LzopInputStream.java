@@ -109,6 +109,8 @@ public class LzopInputStream extends BlockDecompressorStream {
   /**
    * Read and verify an lzo header, setting relevant block checksum options
    * and ignoring most everything else.
+   * @param in InputStream
+   * @throws IOException if there is a error in lzo header
    */
   protected void readHeader(InputStream in) throws IOException {
     readFully(in, buf, 0, 9);

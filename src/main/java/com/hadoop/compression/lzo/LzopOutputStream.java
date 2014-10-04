@@ -37,6 +37,9 @@ public class LzopOutputStream extends CompressorStream {
 
   /**
    * Write an lzop-compatible header to the OutputStream provided.
+   * @param out OutputStream
+   * @param strategy The lzo compression algorithm
+   * @throws IOException if lzop strategy is incompatible 
    */
   protected static void writeLzopHeader(OutputStream out,
           LzoCompressor.CompressionStrategy strategy) throws IOException {
