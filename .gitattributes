@@ -4,3 +4,4 @@
 *         text=auto
 *.sln     text merge=union eol=crlf
 *.vcxproj text merge=union eol=crlf
+*.sh     text eol=lf
