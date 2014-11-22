@@ -114,9 +114,6 @@ public class LzopOutputStream extends CompressorStream {
         indexOut.close();
       }
       closed = true;
-      //return the compressor to the pool for later reuse;
-      //the returnCompressor handles nulls.
-      CodecPool.returnCompressor(compressor);
     }
   }
 
