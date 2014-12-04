@@ -18,10 +18,7 @@
 
 package com.hadoop.compression.lzo;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.CodecPool;
@@ -110,55 +107,40 @@ public class LzopCodec extends LzoCodec {
             getConf().getInt(LZO_BUFFER_SIZE_KEY, DEFAULT_LZO_BUFFER_SIZE));
   }
 
-  private static class WrappedInputStream extends InputStream {
-    private InputStream inputStream;
-    private Decompressor decompressor;
-
-    public WrappedInputStream(InputStream inputStream, Decompressor decompressor) {
-      this.inputStream = inputStream;
-      this.decompressor = decompressor;
-    }
-
-    @Override
-    public int read() throws IOException {
-      return inputStream.read();
-    }
-
-    @Override
-    public void close() throws IOException {
-      CodecPool.returnDecompressor(decompressor);
-      inputStream.close();
-    }
-  }
-
   // Previous versions of the API accidentally added/removed compressor/decompressors from the pool
-  // when they shouldn't.  These classes are kind of a hack to maintain existing behavior,
+  // when they shouldn't.  This classs is kind of a hack to maintain existing behavior,
   // while still allowing proper resource management from outside
-  private static class WrappedOutputStream extends OutputStream {
-    OutputStream outputStream;
-    Compressor compressor;
+  private static class WrappedOutputStream extends FilterOutputStream {
+    private Compressor compressor;
 
     public WrappedOutputStream(OutputStream outputStream, Compressor compressor) {
-      this.outputStream = outputStream;
+      super(outputStream);
       this.compressor = compressor;
     }
 
     @Override
-    public void write(int b) throws IOException {
-      outputStream.write(b);
+    public void write(byte[] b, int off, int len) throws IOException {
+      out.write(b, off, len);
     }
 
     @Override
     public void close() throws IOException {
       CodecPool.returnCompressor(compressor);
-      outputStream.close();
+      super.close();
     }
   }
 
   @Override
-  public CompressionInputStream createInputStream(InputStream in) throws IOException {
-    Decompressor decompressor = CodecPool.getDecompressor(this);
-    InputStream inputStream = new WrappedInputStream(in, decompressor);
+  public CompressionInputStream createInputStream(final InputStream in) throws IOException {
+    final Decompressor decompressor = CodecPool.getDecompressor(this);
+    // maintain backwards compatibility re: returning the decompressor to the CodecPool
+    InputStream inputStream = new FilterInputStream(in) {
+      @Override
+      public void close() throws IOException {
+        CodecPool.returnDecompressor(decompressor);
+        super.close();
+      }
+    };
     return createInputStream(inputStream, decompressor);
   }
 
