@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.util.zip.Adler32;
 
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressorStream;
 import org.apache.hadoop.io.compress.Compressor;
 
@@ -114,9 +113,6 @@ public class LzopOutputStream extends CompressorStream {
         indexOut.close();
       }
       closed = true;
-      //return the compressor to the pool for later reuse;
-      //the returnCompressor handles nulls.
-      CodecPool.returnCompressor(compressor);
     }
   }
 
