@@ -41,7 +41,8 @@ public class LzopOutputStream extends CompressorStream {
    * @throws IOException if lzop strategy is incompatible 
    */
   protected static void writeLzopHeader(OutputStream out,
-          LzoCompressor.CompressionStrategy strategy) throws IOException {
+          LzoCompressor.CompressionStrategy strategy,
+          int compressionLevel) throws IOException {
     DataOutputBuffer dob = new DataOutputBuffer();
     try {
       dob.writeShort(LzopCodec.LZOP_VERSION);
@@ -58,7 +59,7 @@ public class LzopOutputStream extends CompressorStream {
         break;
       case LZO1X_999:
         dob.writeByte(3);
-        dob.writeByte(9);
+        dob.writeByte((byte) compressionLevel);
         break;
       default:
         throw new IOException("Incompatible lzop strategy: " + strategy);
@@ -97,7 +98,9 @@ public class LzopOutputStream extends CompressorStream {
       (bufferSize >> 4) + 64 + 3 : (bufferSize >> 3) + 128 + 3;
     MAX_INPUT_SIZE = bufferSize - overhead;
 
-    writeLzopHeader(this.out, strategy);
+    int compressionLevel = ((LzoCompressor) compressor).getCompressionLevel();
+
+    writeLzopHeader(this.out, strategy, compressionLevel);
   }
 
   /**
