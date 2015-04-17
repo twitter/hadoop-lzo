@@ -285,6 +285,10 @@ class LzoCompressor implements Compressor {
     this(CompressionStrategy.LZO1X_1, 64*1024);
   }
 
+  public int getCompressionLevel() {
+    return this.lzoCompressionLevel;
+  }
+
   public synchronized void setInput(byte[] b, int off, int len) {
     if (b== null) {
       throw new NullPointerException();
