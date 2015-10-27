@@ -906,6 +906,9 @@ EOF
     ppc64:Linux:*:*)
 	echo powerpc64-unknown-linux-${LIBC}
 	exit 0 ;;
+    ppc64le:Linux:*:*)
+	echo powerpc64le-unknown-linux-${LIBC}
+	exit 0 ;;
     alpha:Linux:*:*)
 	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
 	  EV5)   UNAME_MACHINE=alphaev5 ;;
