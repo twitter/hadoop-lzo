@@ -25,7 +25,6 @@ import java.io.OutputStream;
 import java.util.zip.Adler32;
 
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.compress.CodecPool;
 import org.apache.hadoop.io.compress.CompressorStream;
 import org.apache.hadoop.io.compress.Compressor;
 
@@ -37,9 +36,13 @@ public class LzopOutputStream extends CompressorStream {
 
   /**
    * Write an lzop-compatible header to the OutputStream provided.
+   * @param out OutputStream
+   * @param strategy The lzo compression algorithm
+   * @throws IOException if lzop strategy is incompatible 
    */
   protected static void writeLzopHeader(OutputStream out,
-          LzoCompressor.CompressionStrategy strategy) throws IOException {
+          LzoCompressor.CompressionStrategy strategy,
+          int compressionLevel) throws IOException {
     DataOutputBuffer dob = new DataOutputBuffer();
     try {
       dob.writeShort(LzopCodec.LZOP_VERSION);
@@ -56,7 +59,7 @@ public class LzopOutputStream extends CompressorStream {
         break;
       case LZO1X_999:
         dob.writeByte(3);
-        dob.writeByte(9);
+        dob.writeByte((byte) compressionLevel);
         break;
       default:
         throw new IOException("Incompatible lzop strategy: " + strategy);
@@ -95,7 +98,9 @@ public class LzopOutputStream extends CompressorStream {
       (bufferSize >> 4) + 64 + 3 : (bufferSize >> 3) + 128 + 3;
     MAX_INPUT_SIZE = bufferSize - overhead;
 
-    writeLzopHeader(this.out, strategy);
+    int compressionLevel = ((LzoCompressor) compressor).getCompressionLevel();
+
+    writeLzopHeader(this.out, strategy, compressionLevel);
   }
 
   /**
@@ -111,9 +116,6 @@ public class LzopOutputStream extends CompressorStream {
         indexOut.close();
       }
       closed = true;
-      //return the compressor to the pool for later reuse;
-      //the returnCompressor handles nulls.
-      CodecPool.returnCompressor(compressor);
     }
   }
 

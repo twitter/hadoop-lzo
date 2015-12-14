@@ -83,6 +83,7 @@ public class CompatibilityUtil {
 
   /**
    * Returns true whether the runtime hadoop version is 2.x, false otherwise.
+   * @return Whether the runtime hadoop version is 2.x
    */
   public static boolean isVersion2x() {
     return useV2;
@@ -103,6 +104,9 @@ public class CompatibilityUtil {
   /**
    * Creates TaskAttempContext from a JobConf and jobId using the correct
    * constructor for based on the hadoop version.
+   * @param conf {@link Configuration}
+   * @param id {@link TaskAttemptID}
+   * @return {@link TaskAttemptContext}
    */
   public static TaskAttemptContext newTaskAttemptContext(Configuration conf,
                                                          TaskAttemptID id) {
@@ -123,6 +127,8 @@ public class CompatibilityUtil {
   /**
    * Invokes getConfiguration() on JobContext. Works with both
    * hadoop 1 and 2.
+   * @param context {@link JobContext}
+   * @return {@link Configuration}
    */
   public static Configuration getConfiguration(JobContext context) {
     return (Configuration)invoke(GET_CONFIGURATION, context);
@@ -131,6 +137,9 @@ public class CompatibilityUtil {
   /**
    * Invoke getCounter() on TaskInputOutputContext. Works with both
    * Hadoop 1 and 2.
+   * @param context {@link TaskInputOutputContext}
+   * @param counter Mapreduce counter
+   * @return {@link Counter}
    */
   public static Counter getCounter(TaskInputOutputContext context, Enum<?> counter) {
     return (Counter) invoke(GET_COUNTER_ENUM_METHOD, context, counter);
@@ -138,13 +147,16 @@ public class CompatibilityUtil {
 
   /**
    * Increment the counter. Works with both Hadoop 1 and 2
+   * @param counter {@link Counter}
+   * @param increment Increment this counter by the given value
    */
   public static void incrementCounter(Counter counter, long increment) {
     invoke(INCREMENT_COUNTER_METHOD, counter, increment);
   }
 
   /**
-   * Hadoop 1 & 2 compatible counter.getValue()
+   * Hadoop 1 and 2 compatible counter.getValue()
+   * @param counter {@link Counter}
    * @return {@link Counter#getValue()}
    */
   public static long getCounterValue(Counter counter) {
