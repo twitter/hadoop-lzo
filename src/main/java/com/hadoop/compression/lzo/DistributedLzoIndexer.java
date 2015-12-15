@@ -30,17 +30,17 @@ public class DistributedLzoIndexer extends Configured implements Tool {
 
   private static final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
 
-  private static final String LZO_SKIP_INDEXING_SMALL_FILES_KEY = "lzo_skip_indexing_small_files";
-  private static final String LZO_SMALL_FILE_SIZE_KEY = "lzo_small_file_size";
-  private static final String LZO_RECURSIVE_INDEXING_KEY = "lzo_recursive_indexing";
-  private static final boolean LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT = false;
-  private static final boolean LZO_RECURSIVE_INDEXING_DEFAULT = true;
-  private static final long LZO_SMALL_FILE_SIZE_DEFAULT = 0;
-  private boolean lzoSkipIndexingSmallFiles = LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT;
-  private boolean lzoRecursiveIndexing = LZO_RECURSIVE_INDEXING_DEFAULT;
-  private long lzoSmallFileSize = LZO_SMALL_FILE_SIZE_DEFAULT;
-
+  private static final String LZO_INDEXING_SKIP_SMALL_FILES_KEY = "lzo.indexing.skip-small-files.enabled";
+  private static final boolean LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT = false;
+  private static final String LZO_INDEXING_SMALL_FILE_SIZE_KEY = "lzo.indexing.skip-small-files.size";
+  private static final long LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT = 0;
+  private static final String LZO_INDEXING_RECURSIVE_KEY = "lzo.indexing.recursive.enabled";
+  private static final boolean LZO_INDEXING_RECURSIVE_DEFAULT = true;
   private static final String TEMP_FILE_EXTENSION = "/_temporary";
+
+  private boolean lzoSkipIndexingSmallFiles = LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT;
+  private boolean lzoRecursiveIndexing = LZO_INDEXING_RECURSIVE_DEFAULT;
+  private long lzoSmallFileSize = LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT;
 
   private Configuration conf = getConf();
 
@@ -61,16 +61,16 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     return status.getLen() < lzoSmallFileSize;
   }
   
-  private void visitPath(Path path, PathFilter pathFilter, List<Path> accumulator, boolean recursive) {
+  private void visitPath(Path path, PathFilter pathFilter, List<Path> accumulator) {
     try {
-      FileSystem fs = path.getFileSystem(this.conf);
+      FileSystem fs = path.getFileSystem(conf);
       FileStatus fileStatus = fs.getFileStatus(path);
 
       if (fileStatus.isDirectory()) {
-        if (recursive) {
+        if (lzoRecursiveIndexing) {
           FileStatus[] children = fs.listStatus(path, pathFilter);
           for (FileStatus childStatus : children) {
-            visitPath(childStatus.getPath(), pathFilter, accumulator, recursive);
+            visitPath(childStatus.getPath(), pathFilter, accumulator);
           }
         } else {
           LOG.info("[SKIP] Path " + path + " is a directory and recursion is not enabled.");
@@ -86,7 +86,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   private boolean shouldIndexPath(FileStatus fileStatus, FileSystem fs) throws IOException {
     Path path = fileStatus.getPath();
     if (path.toString().endsWith(LZO_EXTENSION)) {
-      if (this.lzoSkipIndexingSmallFiles && isSmallFile(fileStatus)) {
+      if (lzoSkipIndexingSmallFiles && isSmallFile(fileStatus)) {
         LOG.info("[SKIP] Skip indexing small files enabled and " + path + " is too small");
         return false;
       }
@@ -118,17 +118,18 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       return -1;
     }
     
-    this.lzoSkipIndexingSmallFiles =
-        this.conf.getBoolean(LZO_SKIP_INDEXING_SMALL_FILES_KEY, LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT);
+    lzoSkipIndexingSmallFiles =
+        conf.getBoolean(LZO_INDEXING_SKIP_SMALL_FILES_KEY, LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT);
 
-    this.lzoSmallFileSize =
-        this.conf.getLong(LZO_SMALL_FILE_SIZE_KEY, LZO_SMALL_FILE_SIZE_DEFAULT);
+    lzoSmallFileSize =
+        conf.getLong(LZO_INDEXING_SMALL_FILE_SIZE_KEY, LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT);
 
     // Find paths to index based on recursive/not
-    this.lzoRecursiveIndexing = this.conf.getBoolean(LZO_RECURSIVE_INDEXING_KEY, LZO_RECURSIVE_INDEXING_DEFAULT);
+    lzoRecursiveIndexing =
+        conf.getBoolean(LZO_INDEXING_RECURSIVE_KEY, LZO_INDEXING_RECURSIVE_DEFAULT);
     List<Path> inputPaths = new ArrayList<Path>();
     for (String strPath : args) {
-      visitPath(new Path(strPath), nonTemporaryFilter, inputPaths, this.lzoRecursiveIndexing);
+      visitPath(new Path(strPath), nonTemporaryFilter, inputPaths);
     }
 
     if (inputPaths.isEmpty()) {
@@ -137,7 +138,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       return 0;
     }
 
-    Job job = new Job(this.conf);
+    Job job = new Job(conf);
     job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));
 
     job.setOutputKeyClass(Path.class);
@@ -191,9 +192,9 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     String usage =
         "Command: hadoop jar /path/to/this/jar com.hadoop.compression.lzo.DistributedLzoIndexer <file.lzo | directory> [file2.lzo directory3 ...]" +
         "\nConfiguration options: \"key\" [values] <default> description" +
-        "\n" + LZO_SKIP_INDEXING_SMALL_FILES_KEY + " [true,false] <" + LZO_SKIP_INDEXING_SMALL_FILES_DEFAULT + "> When indexing, skip files smaller than " + LZO_SMALL_FILE_SIZE_KEY + " bytes." +
-        "\n" + LZO_SMALL_FILE_SIZE_KEY + " [long] <" +LZO_SMALL_FILE_SIZE_DEFAULT + "> When indexing, skip files smaller than this number of bytes if " + LZO_SKIP_INDEXING_SMALL_FILES_KEY + " is true." +
-        "\n" + LZO_RECURSIVE_INDEXING_KEY + " [true,false] <" + LZO_RECURSIVE_INDEXING_DEFAULT + "> Look for files to index recursively from paths on command line.";
+        "\n" + LZO_INDEXING_SKIP_SMALL_FILES_KEY + " [true,false] <" + LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT + "> When indexing, skip files smaller than " + LZO_INDEXING_SMALL_FILE_SIZE_KEY + " bytes." +
+        "\n" + LZO_INDEXING_SMALL_FILE_SIZE_KEY + " [long] <" + LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT + "> When indexing, skip files smaller than this number of bytes if " + LZO_INDEXING_SKIP_SMALL_FILES_KEY + " is true." +
+        "\n" + LZO_INDEXING_RECURSIVE_KEY + " [true,false] <" + LZO_INDEXING_RECURSIVE_DEFAULT + "> Look for files to index recursively from paths on command line.";
     System.err.println(usage);
   }
 }
