@@ -50,7 +50,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   private final PathFilter nonTemporaryFilter = new PathFilter() {
     @Override
     public boolean accept(Path path) {
-      return !path.toString().endsWith(TEMP_FILE_EXTENSION);
+      return !path.getName().endsWith(TEMP_FILE_EXTENSION);
     }
   };
 
@@ -60,17 +60,31 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   private boolean isSmallFile(FileStatus status) {
     return status.getLen() < lzoSmallFileSize;
   }
-  
+
   private void visitPath(Path path, PathFilter pathFilter, List<Path> accumulator) {
     try {
       FileSystem fs = path.getFileSystem(conf);
       FileStatus fileStatus = fs.getFileStatus(path);
+      visitPathHelper(fileStatus, fs, pathFilter, accumulator, true);
+    } catch (IOException ioe) {
+      LOG.error("Error visiting root path: " + path, ioe);
+    }
+  }
 
+  // isInitialCall exists for this method to be consistent with Hadoop's defintion
+  // of "recursive" where if the root path to a job is a directory and
+  // and recursive = false, it still uses the files in that directory but does not
+  // recurse into children directories. The initial call is from visitPath
+  // with isInitialCall = true to mimic this behavior. Afterwards the recursive
+  // case sets isInitialCall = false.
+  private void visitPathHelper(FileStatus fileStatus, FileSystem fs, PathFilter pathFilter, List<Path> accumulator, boolean isInitialCall) {
+    try {
+      Path path = fileStatus.getPath();
       if (fileStatus.isDirectory()) {
-        if (lzoRecursiveIndexing) {
+        if (lzoRecursiveIndexing || isInitialCall) {
           FileStatus[] children = fs.listStatus(path, pathFilter);
           for (FileStatus childStatus : children) {
-            visitPath(childStatus.getPath(), pathFilter, accumulator);
+            visitPathHelper(childStatus, fs, pathFilter, accumulator, false);
           }
         } else {
           LOG.info("[SKIP] Path " + path + " is a directory and recursion is not enabled.");
@@ -79,32 +93,33 @@ public class DistributedLzoIndexer extends Configured implements Tool {
         accumulator.add(path);
       }
     } catch (IOException ioe) {
-      LOG.warn("Error walking path: " + path, ioe);
+      LOG.warn("Error visiting path: " + fileStatus.getPath(), ioe);
     }
   }
 
   private boolean shouldIndexPath(FileStatus fileStatus, FileSystem fs) throws IOException {
     Path path = fileStatus.getPath();
-    if (path.toString().endsWith(LZO_EXTENSION)) {
+    if (path.getName().endsWith(LZO_EXTENSION)) {
       if (lzoSkipIndexingSmallFiles && isSmallFile(fileStatus)) {
         LOG.info("[SKIP] Skip indexing small files enabled and " + path + " is too small");
         return false;
       }
 
-      Path lzoIndexPath = new Path(path, LzoIndex.LZO_INDEX_SUFFIX);
+      Path lzoIndexPath = path.suffix(LzoIndex.LZO_INDEX_SUFFIX);
       if (fs.exists(lzoIndexPath)) {
         // If the index exists and is of nonzero size, we're already done.
         // We re-index a file with a zero-length index, because every file has at least one block.
-        if (fileStatus.getLen() > 0) {
+        FileStatus indexFileStatus = fs.getFileStatus(lzoIndexPath);
+        if (indexFileStatus.getLen() > 0) {
           LOG.info("[SKIP] LZO index file already exists for " + path);
           return false;
         } else {
-          LOG.info("Adding LZO file " + path + " to indexing list (index file exists but is zero length)");
+          LOG.info("[ADD] LZO file " + path + " to indexing list (index file exists but is zero length)");
           return true;
         }
       } else {
         // If no index exists, we need to index the file.
-        LOG.info("Adding LZO file " + path + " to indexing list (no index currently exists)");
+        LOG.info("[ADD] LZO file " + path + " to indexing list (no index currently exists)");
         return true;
       }
     }
@@ -115,7 +130,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     if (args.length == 0 || (args.length == 1 && "--help".equals(args[0]))) {
       printUsage();
       ToolRunner.printGenericCommandUsage(System.err);
-      return -1;
+      return -1; // error
     }
     
     lzoSkipIndexingSmallFiles =
@@ -194,7 +209,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
         "\nConfiguration options: \"key\" [values] <default> description" +
         "\n" + LZO_INDEXING_SKIP_SMALL_FILES_KEY + " [true,false] <" + LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT + "> When indexing, skip files smaller than " + LZO_INDEXING_SMALL_FILE_SIZE_KEY + " bytes." +
         "\n" + LZO_INDEXING_SMALL_FILE_SIZE_KEY + " [long] <" + LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT + "> When indexing, skip files smaller than this number of bytes if " + LZO_INDEXING_SKIP_SMALL_FILES_KEY + " is true." +
-        "\n" + LZO_INDEXING_RECURSIVE_KEY + " [true,false] <" + LZO_INDEXING_RECURSIVE_DEFAULT + "> Look for files to index recursively from paths on command line.";
+        "\n" + LZO_INDEXING_RECURSIVE_KEY + " [true,false] <" + LZO_INDEXING_RECURSIVE_DEFAULT + "> When indexing, recurse into child directories of input paths.";
     System.err.println(usage);
   }
 }
