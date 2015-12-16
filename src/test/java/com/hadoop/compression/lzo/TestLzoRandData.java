@@ -14,15 +14,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import com.hadoop.compression.lzo.LzopCodec;
-
 /**
  * Unit Test for LZO with random data.
  */
 public class TestLzoRandData extends TestCase {
 
   Configuration conf;
-  CompressionCodec codec;
 
   @Override
   protected void setUp() throws Exception {
