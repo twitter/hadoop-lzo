@@ -36,7 +36,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   public static final long LZO_INDEXING_SMALL_FILE_SIZE_DEFAULT = 0;
   public static final String LZO_INDEXING_RECURSIVE_KEY = "lzo.indexing.recursive.enabled";
   public static final boolean LZO_INDEXING_RECURSIVE_DEFAULT = true;
-  private static final String TEMP_FILE_EXTENSION = "/_temporary";
+  private static final String TEMP_FILE_NAME = "/_temporary";
 
   private boolean lzoSkipIndexingSmallFiles = LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT;
   private boolean lzoRecursiveIndexing = LZO_INDEXING_RECURSIVE_DEFAULT;
@@ -49,12 +49,12 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   private Configuration conf = getConf();
 
   /**
-   * Accepts paths which don't end in TEMP_FILE_EXTENSION
+   * Accepts paths which don't end in TEMP_FILE_NAME
    */
   private final PathFilter nonTemporaryFilter = new PathFilter() {
     @Override
     public boolean accept(Path path) {
-      return !path.getName().endsWith(TEMP_FILE_EXTENSION);
+      return !path.toString().endsWith(TEMP_FILE_NAME);
     }
   };
 
