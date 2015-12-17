@@ -66,8 +66,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   }
 
   /**
-   * Adds into accumulator paths under path which pass pathFilter and which
-   * shouldIndexFile returns true.
+   * Adds into accumulator paths under path which this indexer should index.
    * @param path The root path to check under.
    * @param pathFilter The filter to apply for all paths.
    * @param accumulator The list to accumulate paths to process in. The state
@@ -83,12 +82,12 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
   }
 
-  // isInitialCall exists for this method to be consistent with Hadoop's definition
-  // of "recursive" where if the root path to a job is a directory and
-  // and recursive = false, it still uses the files in that directory but does not
-  // recurse into children directories. The initial call is from visitPath
-  // with isInitialCall = true to mimic this behavior. Afterwards the recursive
-  // case sets isInitialCall = false.
+  /* isInitialCall exists for this method to be consistent with Hadoop's definition
+    of "recursive": if the root path to a job is a directory and
+    and "recursive = false", it still uses the files in that directory but does not
+    recurse into children directories. The initial call is from visitPath
+    with isInitialCall = true to mimic this behavior. Afterwards the recursive
+    case sets isInitialCall = false.  */
   private void visitPathHelper(FileStatus fileStatus, FileSystem fs, PathFilter pathFilter, List<Path> accumulator, boolean isInitialCall) {
     try {
       Path path = fileStatus.getPath();
@@ -109,6 +108,15 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
   }
 
+  /**
+   * Determine based on previous configuration of this indexer whether a file
+   * represented by fileStatus on the given FileSystem should be indexed or not.
+   * @param fileStatus The file to consider for indexing.
+   * @param fs The FileSystem on which the file resides.
+   * @return true if this indexer is configured to consider fileStatus indexable
+   *         false if this indexer doesn't consider fileStatus indexable.
+   * @throws IOException
+   */
   public boolean shouldIndexFile(FileStatus fileStatus, FileSystem fs) throws IOException {
     Path path = fileStatus.getPath();
     if (path.getName().endsWith(LZO_EXTENSION)) {
@@ -141,6 +149,10 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     return false;
   }
 
+  /**
+   * Configures this indexer from the values set in conf.
+   * @param conf The Configuration to read values from.
+   */
   public void configure(Configuration conf) {
     lzoSkipIndexingSmallFiles =
         conf.getBoolean(LZO_INDEXING_SKIP_SMALL_FILES_KEY, LZO_INDEXING_SKIP_SMALL_FILES_DEFAULT);
@@ -152,9 +164,16 @@ public class DistributedLzoIndexer extends Configured implements Tool {
         conf.getBoolean(LZO_INDEXING_RECURSIVE_KEY, LZO_INDEXING_RECURSIVE_DEFAULT);
   }
 
-  private Job createJob(Configuration conf, String[] args) throws IOException {
+  /**
+   * Creates a Job from the given Configuration and commandline arguments.
+   * @param conf The base Configuration to use for the job.
+   * @param name The name to give the Job. Appened to "Distributed Lzo Indexer".
+   * @return The configured Job object.
+   * @throws IOException
+   */
+  private Job createJob(Configuration conf, String name) throws IOException {
     Job job = new Job(conf);
-    job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));
+    job.setJobName("Distributed Lzo Indexer " + name);
 
     job.setOutputKeyClass(Path.class);
     job.setOutputValueClass(LongWritable.class);
@@ -192,7 +211,8 @@ public class DistributedLzoIndexer extends Configured implements Tool {
       return 0;
     }
 
-    Job job = createJob(conf, args);
+    String jobName = Arrays.toString(args);
+    Job job = createJob(conf, jobName);
 
     for (Path p : inputPaths) {
       FileInputFormat.addInputPath(job, p);
