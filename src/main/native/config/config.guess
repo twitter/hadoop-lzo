@@ -844,6 +844,9 @@ EOF
     arm*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
 	exit 0 ;;
+    aarch64:Linux:*:*)
+	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
+	exit 0 ;;
     cris:Linux:*:*)
 	echo cris-axis-linux-${LIBC}
 	exit 0 ;;
