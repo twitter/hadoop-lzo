@@ -25,6 +25,9 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class DistributedLzoIndexer extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(DistributedLzoIndexer.class);
+  public static final String JOB_NAME_KEY = "lzo.indexer.distributed.job.name";
+  public static final String JOB_NAME_MAX_LENGTH_KEY = "lzo.indexer.distributed.job.name.max.length";
+  private static final int DEFAULT_JOB_NAME_MAX_LENGTH = 200;
   private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
 
   private final PathFilter nonTemporaryFilter = new PathFilter() {
@@ -66,6 +69,17 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
   }
 
+  private void setJobName(Job job, String[] args) {
+    String name = getConf().get(JOB_NAME_KEY, "Distributed Lzo Indexer " + Arrays.toString(args));
+
+    int maxLength = getConf().getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
+    if (name.length() > maxLength) {
+      name = name.substring(0, maxLength) + "...";
+    }
+
+    job.setJobName(name);
+  }
+
   public int run(String[] args) throws Exception {
     if (args.length == 0 || (args.length == 1 && "--help".equals(args[0]))) {
       printUsage();
@@ -85,7 +99,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
 
     Job job = new Job(getConf());
-    job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));
+    setJobName(job, args);
 
     job.setOutputKeyClass(Path.class);
     job.setOutputValueClass(LongWritable.class);
