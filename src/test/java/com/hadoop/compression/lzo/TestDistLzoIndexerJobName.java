@@ -19,7 +19,7 @@ public class TestDistLzoIndexerJobName extends TestCase {
     assertEquals(expected, job.getJobName());
   }
 
-  public void testCustomeName() throws Exception {
+  public void testCustomName() throws Exception {
     String[] args = new String[]{
         "ignored",
     };
@@ -33,7 +33,7 @@ public class TestDistLzoIndexerJobName extends TestCase {
     assertEquals(customName, job.getJobName());
   }
 
-  public void testCustomeNameTruncation() throws Exception {
+  public void testCustomNameTruncation() throws Exception {
     String[] args = new String[]{
         "ignored",
     };
