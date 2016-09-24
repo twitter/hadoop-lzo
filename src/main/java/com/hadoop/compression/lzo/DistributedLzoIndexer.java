@@ -11,6 +11,7 @@ import com.hadoop.mapreduce.LzoSplitInputFormat;
 import com.hadoop.mapreduce.LzoSplitRecordReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -25,6 +26,16 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class DistributedLzoIndexer extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(DistributedLzoIndexer.class);
+  /**
+   * Override the default job name which is generated from the arguments.
+   */
+  public static final String JOB_NAME_KEY = "lzo.indexer.distributed.job.name";
+  /**
+   * Override the default length to which the job name will be truncated. Set non-positive to disable.
+   */
+  public static final String JOB_NAME_MAX_LENGTH_KEY = "lzo.indexer.distributed.job.name.max.length";
+  static final String DEFAULT_JOB_NAME_PREFIX = "Distributed Lzo Indexer";
+  private static final int DEFAULT_JOB_NAME_MAX_LENGTH = 200;
   private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
 
   private final PathFilter nonTemporaryFilter = new PathFilter() {
@@ -66,6 +77,20 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
   }
 
+  static void setJobName(Job job, String[] args) {
+    final Configuration conf = job.getConfiguration();
+
+    String name = conf.get(JOB_NAME_KEY, DEFAULT_JOB_NAME_PREFIX + " " + Arrays.toString(args));
+
+    final int maxLength = conf.getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
+
+    if (maxLength > 0 && name.length() > maxLength) {
+      name = name.substring(0, maxLength) + "...";
+    }
+
+    job.setJobName(name);
+  }
+
   public int run(String[] args) throws Exception {
     if (args.length == 0 || (args.length == 1 && "--help".equals(args[0]))) {
       printUsage();
@@ -85,7 +110,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
 
     Job job = new Job(getConf());
-    job.setJobName("Distributed Lzo Indexer " + Arrays.toString(args));
+    setJobName(job, args);
 
     job.setOutputKeyClass(Path.class);
     job.setOutputValueClass(LongWritable.class);
