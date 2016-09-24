@@ -14,7 +14,7 @@ public class TestDistLzoIndexerJobName extends TestCase {
     Job job = new Job(new Configuration(false));
     DistributedLzoIndexer.setJobName(job, args);
 
-    String expected = "Distributed Lzo Indexer [hdfs://cluster/user/test/output/file-m-00000.lzo]";
+    String expected = DistributedLzoIndexer.DEFAULT_JOB_NAME_PREFIX + " [hdfs://cluster/user/test/output/file-m-00000.lzo]";
 
     assertEquals(expected, job.getJobName());
   }

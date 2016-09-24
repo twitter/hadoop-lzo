@@ -34,6 +34,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
    * Override the default length to which the job name will be truncated. Set non-positive to disable.
    */
   public static final String JOB_NAME_MAX_LENGTH_KEY = "lzo.indexer.distributed.job.name.max.length";
+  static final String DEFAULT_JOB_NAME_PREFIX = "Distributed Lzo Indexer";
   private static final int DEFAULT_JOB_NAME_MAX_LENGTH = 200;
   private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
 
@@ -79,7 +80,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   static void setJobName(Job job, String[] args) {
     final Configuration conf = job.getConfiguration();
 
-    String name = conf.get(JOB_NAME_KEY, "Distributed Lzo Indexer " + Arrays.toString(args));
+    String name = conf.get(JOB_NAME_KEY, DEFAULT_JOB_NAME_PREFIX + " " + Arrays.toString(args));
 
     final int maxLength = conf.getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
 
