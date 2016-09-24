@@ -11,6 +11,7 @@ import com.hadoop.mapreduce.LzoSplitInputFormat;
 import com.hadoop.mapreduce.LzoSplitRecordReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -69,10 +70,13 @@ public class DistributedLzoIndexer extends Configured implements Tool {
     }
   }
 
-  private void setJobName(Job job, String[] args) {
-    String name = getConf().get(JOB_NAME_KEY, "Distributed Lzo Indexer " + Arrays.toString(args));
+  static void setJobName(Job job, String[] args) {
+    final Configuration conf = job.getConfiguration();
 
-    int maxLength = getConf().getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
+    String name = conf.get(JOB_NAME_KEY, "Distributed Lzo Indexer " + Arrays.toString(args));
+
+    final int maxLength = conf.getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
+
     if (name.length() > maxLength) {
       name = name.substring(0, maxLength) + "...";
     }
