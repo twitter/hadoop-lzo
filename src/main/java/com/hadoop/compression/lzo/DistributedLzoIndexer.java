@@ -26,7 +26,13 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class DistributedLzoIndexer extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(DistributedLzoIndexer.class);
+  /**
+   * Override the default job name which is generated from the arguments.
+   */
   public static final String JOB_NAME_KEY = "lzo.indexer.distributed.job.name";
+  /**
+   * Override the default length to which the job name will be truncated. Set non-positive to disable.
+   */
   public static final String JOB_NAME_MAX_LENGTH_KEY = "lzo.indexer.distributed.job.name.max.length";
   private static final int DEFAULT_JOB_NAME_MAX_LENGTH = 200;
   private final String LZO_EXTENSION = new LzopCodec().getDefaultExtension();
@@ -77,7 +83,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
 
     final int maxLength = conf.getInt(JOB_NAME_MAX_LENGTH_KEY, DEFAULT_JOB_NAME_MAX_LENGTH);
 
-    if (name.length() > maxLength) {
+    if (maxLength > 0 && name.length() > maxLength) {
       name = name.substring(0, maxLength) + "...";
     }
 

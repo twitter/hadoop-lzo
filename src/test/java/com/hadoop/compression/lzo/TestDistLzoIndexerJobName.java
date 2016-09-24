@@ -87,4 +87,22 @@ public class TestDistLzoIndexerJobName extends TestCase {
     assertEquals(expected, job.getJobName());
   }
 
+  public void testDisabledTruncation() throws Exception {
+    String[] args = new String[]{
+        "hdfs://cluster/user/test/output/file-m-00000.lzo",
+        "hdfs://cluster/user/test/output/file-m-00001.lzo",
+        "hdfs://cluster/user/test/output/file-m-00002.lzo",
+        "hdfs://cluster/user/test/output/file-m-00003.lzo",
+        "hdfs://cluster/user/test/output/file-m-00003.lzo",
+    };
+
+    Configuration conf = new Configuration(false);
+    conf.setInt("lzo.indexer.distributed.job.name.max.length", 0);
+    Job job = new Job(conf);
+    DistributedLzoIndexer.setJobName(job, args);
+
+    String expected = "Distributed Lzo Indexer [hdfs://cluster/user/test/output/file-m-00000.lzo, hdfs://cluster/user/test/output/file-m-00001.lzo, hdfs://cluster/user/test/output/file-m-00002.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo]";
+    assertEquals(expected, job.getJobName());
+  }
+
 }
