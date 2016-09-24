@@ -26,7 +26,7 @@ public class TestDistLzoIndexerJobName extends TestCase {
     String customName = "-<Custom Job Name>-";
 
     Configuration conf = new Configuration(false);
-    conf.set("lzo.indexer.distributed.job.name", customName);
+    conf.set(DistributedLzoIndexer.JOB_NAME_KEY, customName);
     Job job = new Job(conf);
     DistributedLzoIndexer.setJobName(job, args);
 
@@ -39,8 +39,8 @@ public class TestDistLzoIndexerJobName extends TestCase {
     };
 
     Configuration conf = new Configuration(false);
-    conf.set("lzo.indexer.distributed.job.name", "123456789");
-    conf.setInt("lzo.indexer.distributed.job.name.max.length", 5);
+    conf.set(DistributedLzoIndexer.JOB_NAME_KEY, "123456789");
+    conf.setInt(DistributedLzoIndexer.JOB_NAME_MAX_LENGTH_KEY, 5);
     Job job = new Job(conf);
     DistributedLzoIndexer.setJobName(job, args);
 
@@ -57,11 +57,11 @@ public class TestDistLzoIndexerJobName extends TestCase {
     };
 
     Configuration conf = new Configuration(false);
-    conf.setInt("lzo.indexer.distributed.job.name.max.length", 50);
+    conf.setInt(DistributedLzoIndexer.JOB_NAME_MAX_LENGTH_KEY, 50);
     Job job = new Job(conf);
     DistributedLzoIndexer.setJobName(job, args);
 
-    String expected = "Distributed Lzo Indexer [hdfs://cluster/user/test/...";
+    String expected = DistributedLzoIndexer.DEFAULT_JOB_NAME_PREFIX + " [hdfs://cluster/user/test/...";
     // Truncated length should be 50 + 3 for the "..."
     assertEquals(53, expected.length());
 
@@ -78,11 +78,11 @@ public class TestDistLzoIndexerJobName extends TestCase {
     };
 
     Configuration conf = new Configuration(false);
-    conf.setInt("lzo.indexer.distributed.job.name.max.length", 0);
+    conf.setInt(DistributedLzoIndexer.JOB_NAME_MAX_LENGTH_KEY, 0);
     Job job = new Job(conf);
     DistributedLzoIndexer.setJobName(job, args);
 
-    String expected = "Distributed Lzo Indexer [hdfs://cluster/user/test/output/file-m-00000.lzo, hdfs://cluster/user/test/output/file-m-00001.lzo, hdfs://cluster/user/test/output/file-m-00002.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo]";
+    String expected = DistributedLzoIndexer.DEFAULT_JOB_NAME_PREFIX + " [hdfs://cluster/user/test/output/file-m-00000.lzo, hdfs://cluster/user/test/output/file-m-00001.lzo, hdfs://cluster/user/test/output/file-m-00002.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo]";
     assertEquals(expected, job.getJobName());
   }
 
