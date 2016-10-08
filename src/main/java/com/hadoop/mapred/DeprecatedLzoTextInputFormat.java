@@ -21,10 +21,10 @@ package com.hadoop.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -63,7 +63,7 @@ import com.hadoop.compression.lzo.LzoInputFormatCommon;
 
 @SuppressWarnings("deprecation")
 public class DeprecatedLzoTextInputFormat extends TextInputFormat {
-  private final Map<Path, LzoIndex> indexes = new HashMap<Path, LzoIndex>();
+  private final Map<Path, LzoIndex> indexes = new ConcurrentHashMap<Path, LzoIndex>();
 
   @Override
   protected FileStatus[] listStatus(JobConf conf) throws IOException {
