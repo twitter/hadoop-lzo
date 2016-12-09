@@ -83,4 +83,9 @@ public class TestLzoCodec extends TestCase {
     assertEquals(LzoCompressor.CompressionStrategy.LZO1X_1,
                  ((LzoCompressor)c2).getStrategy());
   }
+
+  public void testGetRevisionHash() throws Exception {
+    // should always return a revision hash
+    assertFalse(LzoCodec.getRevisionHash().equalsIgnoreCase("UNKNOWN"));
+  }
 }

@@ -97,10 +97,10 @@ public class LzoCodec implements Configurable, CompressionCodec {
   public static String getRevisionHash() {
     try {
       Properties p = new Properties();
-      p.load(LzoCodec.class.getResourceAsStream("/build.properties"));
+      p.load(LzoCodec.class.getResourceAsStream("/hadoop-lzo-build.properties"));
       return p.getProperty("build_revision");
     } catch (IOException e) {
-      LOG.error("Could not find build properties file with revision hash");
+      LOG.error("Could not find /hadoop-lzo-build.properties resource file with revision hash");
       return "UNKNOWN";
     }
   }
