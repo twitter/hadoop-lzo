@@ -155,7 +155,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   }
 
   public static void main(String[] args) throws Exception {
-    int exitCode = ToolRunner.run(new DistributedLzoIndexer(), args);
+    int exitCode = ToolRunner.run(new Configuration(), new DistributedLzoIndexer(), args);
     System.exit(exitCode);
   }
 
