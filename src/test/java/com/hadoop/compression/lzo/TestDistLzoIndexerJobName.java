@@ -85,5 +85,18 @@ public class TestDistLzoIndexerJobName extends TestCase {
     String expected = DistributedLzoIndexer.DEFAULT_JOB_NAME_PREFIX + " [hdfs://cluster/user/test/output/file-m-00000.lzo, hdfs://cluster/user/test/output/file-m-00001.lzo, hdfs://cluster/user/test/output/file-m-00002.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo, hdfs://cluster/user/test/output/file-m-00003.lzo]";
     assertEquals(expected, job.getJobName());
   }
+  
+  public void testCustomConfigAcceptance() throws Exception {
+      String[] args = new String[]{
+          "hdfs://cluster/user/test/output/file-m-00000.lzo"
+      };
+
+      Configuration conf = new Configuration();
+      conf.set("mapred.job.queue.name", "testqueue");
+      Job job = new Job(conf);
+      DistributedLzoIndexer.setJobName(job, args);
+
+      assertEquals("testqueue", job.getConfiguration().get("mapred.job.queue.name"));
+    }
 
 }
