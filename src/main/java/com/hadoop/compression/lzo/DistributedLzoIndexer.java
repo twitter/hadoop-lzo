@@ -134,6 +134,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
 
     LOG.info("Started DistributedIndexer " + job.getJobID() + " with " +
         inputPaths.size() + " splits for " + Arrays.toString(args));
+    LOG.info("Queue Used: " + job.getConfiguration().get("mapred.job.queue.name"));
 
     if (job.waitForCompletion(true)) {
       long successfulMappers = CompatibilityUtil.getCounterValue(
@@ -155,7 +156,7 @@ public class DistributedLzoIndexer extends Configured implements Tool {
   }
 
   public static void main(String[] args) throws Exception {
-    int exitCode = ToolRunner.run(new DistributedLzoIndexer(), args);
+    int exitCode = ToolRunner.run(new Configuration(), new DistributedLzoIndexer(), args);
     System.exit(exitCode);
   }
 
