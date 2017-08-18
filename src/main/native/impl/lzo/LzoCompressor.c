@@ -107,7 +107,6 @@ typedef int
                                   lzo_bytep dst, lzo_uintp dst_len,
                                   lzo_voidp wrkmem, int compression_level );
 
-static jfieldID LzoCompressor_clazz;
 static jfieldID LzoCompressor_finish;
 static jfieldID LzoCompressor_finished;
 static jfieldID LzoCompressor_uncompressedDirectBuf;
@@ -145,8 +144,6 @@ Java_com_hadoop_compression_lzo_LzoCompressor_initIDs(
   }
 #endif
     
-  LzoCompressor_clazz = (*env)->GetStaticFieldID(env, class, "clazz", 
-                                                 "Ljava/lang/Class;");
   LzoCompressor_finish = (*env)->GetFieldID(env, class, "finish", "Z");
   LzoCompressor_finished = (*env)->GetFieldID(env, class, "finished", "Z");
   LzoCompressor_uncompressedDirectBuf = (*env)->GetFieldID(env, class, 
@@ -258,7 +255,6 @@ JNIEXPORT jint JNICALL
 Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
   JNIEnv *env, jobject this, jint compressor 
 	) {
-  jobject clazz = NULL;
   jobject uncompressed_direct_buf = NULL;
   lzo_uint uncompressed_direct_buf_len = 0;
   jobject compressed_direct_buf = NULL;
@@ -277,8 +273,6 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
   const char *lzo_compressor_function = lzo_compressors[compressor].function;
 
 	// Get members of LzoCompressor
-    clazz = (*env)->GetStaticObjectField(env, this, 
-                                                 LzoCompressor_clazz);
 	uncompressed_direct_buf = (*env)->GetObjectField(env, this, 
 									                    LzoCompressor_uncompressedDirectBuf);
 	uncompressed_direct_buf_len = (*env)->GetIntField(env, this, 
@@ -303,30 +297,21 @@ Java_com_hadoop_compression_lzo_LzoCompressor_compressBytesDirect(
                   LzoCompressor_lzoCompressor);
 
     // Get the input direct buffer
-    LOCK_CLASS(env, clazz, "LzoCompressor");
 	uncompressed_bytes = (*env)->GetDirectBufferAddress(env, 
                                             uncompressed_direct_buf);
-    UNLOCK_CLASS(env, clazz, "LzoCompressor");
-    
   if (uncompressed_bytes == 0) {
     	return (jint)0;
 	}
 	
     // Get the output direct buffer
-    LOCK_CLASS(env, clazz, "LzoCompressor");
 	compressed_bytes = (*env)->GetDirectBufferAddress(env, 
                                             compressed_direct_buf);
-    UNLOCK_CLASS(env, clazz, "LzoCompressor");
-    
   if (compressed_bytes == 0) {
 		return (jint)0;
 	}
 	
     // Get the working-memory direct buffer
-    LOCK_CLASS(env, clazz, "LzoCompressor");
     workmem = (*env)->GetDirectBufferAddress(env, working_memory_buf);
-    UNLOCK_CLASS(env, clazz, "LzoCompressor");
-    
   if (workmem == 0) {
     return (jint)0;
   }

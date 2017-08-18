@@ -35,10 +35,6 @@ class LzoDecompressor implements Decompressor {
   private static final Log LOG = 
     LogFactory.getLog(LzoDecompressor.class.getName());
 
-  // HACK - Use this as a global lock in the JNI layer
-  @SuppressWarnings({ "unchecked", "unused" })
-  private static Class clazz = LzoDecompressor.class;
-
   /**
    * The minimum version of LZO that we can read.
    * Set to 1.0 since there were a couple header
