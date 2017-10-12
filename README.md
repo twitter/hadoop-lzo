@@ -35,7 +35,7 @@ Now let's build hadoop-lzo.
 
     C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
     LIBRARY_PATH=/usr/local/lzo-2.06/lib \
-      mvn clean test
+      mvn clean package
 
 Running tests on Windows also requires setting PATH to include the location of lzo2.dll.
 
