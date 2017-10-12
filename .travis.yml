@@ -4,7 +4,7 @@ before_install:
 env:
   - C_INCLUDE_PATH=/usr/include/lzo LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
 jdk:
-  - openjdk6 # works with 7 too
+  - openjdk8 # works with 7 too
 script:
   - mvn test # build with hadoop 2 and test against hadoop 2
   - mvn test -P hadoop-old # build with hadoop 2 and test against hadoop 1
