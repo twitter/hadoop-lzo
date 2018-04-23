@@ -25,7 +25,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,12 +45,12 @@ import com.hadoop.compression.lzo.LzoIndex;
 import com.hadoop.compression.lzo.LzoInputFormatCommon;
 
 /**
- * This class conforms to the old (org.apache.hadoop.mapred.*) hadoop API style 
- * which is deprecated but still required in places.  Streaming, for example, 
- * does a check that the given input format is a descendant of 
+ * This class conforms to the old (org.apache.hadoop.mapred.*) hadoop API style
+ * which is deprecated but still required in places.  Streaming, for example,
+ * does a check that the given input format is a descendant of
  * org.apache.hadoop.mapred.InputFormat, which any InputFormat-derived class
  * from the new API fails.  In order for streaming to work, you must use
- * com.hadoop.mapred.DeprecatedLzoTextInputFormat, not 
+ * com.hadoop.mapred.DeprecatedLzoTextInputFormat, not
  * com.hadoop.mapreduce.LzoTextInputFormat.  The classes attempt to be alike in
  * every other respect.
  * <p>
@@ -63,7 +66,8 @@ import com.hadoop.compression.lzo.LzoInputFormatCommon;
 
 @SuppressWarnings("deprecation")
 public class DeprecatedLzoTextInputFormat extends TextInputFormat {
-  private final Map<Path, LzoIndex> indexes = new HashMap<Path, LzoIndex>();
+  private static final Log LOG = LogFactory.getLog(DeprecatedLzoTextInputFormat.class);
+  private final Map<Path, LzoIndex> indexes = new ConcurrentHashMap<Path, LzoIndex>();
 
   @Override
   protected FileStatus[] listStatus(JobConf conf) throws IOException {
@@ -97,8 +101,8 @@ public class DeprecatedLzoTextInputFormat extends TextInputFormat {
   @Override
   protected boolean isSplitable(FileSystem fs, Path filename) {
     if (LzoInputFormatCommon.isLzoFile(filename.toString())) {
-      LzoIndex index = indexes.get(filename);
-      return !index.isEmpty();
+      LzoIndex index = getLzoIndex(fs, filename);
+        return index != null && !index.isEmpty();
     } else {
       // Delegate non-LZO files to the TextInputFormat base class.
       return super.isSplitable(fs, filename);
@@ -151,12 +155,57 @@ public class DeprecatedLzoTextInputFormat extends TextInputFormat {
   public RecordReader<LongWritable, Text> getRecordReader(InputSplit split,
       JobConf conf, Reporter reporter) throws IOException {
     FileSplit fileSplit = (FileSplit) split;
-    if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
+    if (LzoInputFormatCommon.isLzoIndexFile(fileSplit.getPath().toString())) {
+      // return dummy RecordReader when provider split is an index file
+      return new RecordReader<LongWritable, Text>() {
+
+        public LongWritable createKey() {
+          return new LongWritable();
+        }
+
+        public Text createValue() {
+          return new Text();
+        }
+
+        public boolean next(LongWritable key, Text value) throws IOException {
+          return false;
+        }
+
+        public float getProgress() throws IOException {
+          return 0.0f;
+        }
+
+        public synchronized long getPos() throws IOException {
+          return 0;
+        }
+
+        public synchronized void close() throws IOException {
+        }
+      };
+    } else if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
       reporter.setStatus(split.toString());
-      return new DeprecatedLzoLineRecordReader(conf, (FileSplit)split);
+      return new DeprecatedLzoLineRecordReader(conf, (FileSplit)split,
+              getLzoIndex(FileSystem.get(conf),((FileSplit) split).getPath()));
     } else {
       // delegate non-LZO files to the TextInputFormat base class.
       return super.getRecordReader(split, conf, reporter);
     }
+  }
+
+  private LzoIndex getLzoIndex(FileSystem fs, Path filePath) {
+    String fileName = filePath.toString();
+    LzoIndex index = indexes.get(filePath);
+    if (LzoInputFormatCommon.isLzoFile(fileName)) {
+      if (index == null||index.isEmpty()) {
+        try {
+          LOG.warn("index is null, it will read index, file name:" + fileName);
+          index = LzoIndex.readIndex(fs, filePath);
+          indexes.put(filePath, index);
+        } catch (IOException e) {
+          LOG.error("LzoIndex readIndex error, fileName:" + fileName, e);
+        }
+      }
+    }
+    return index;
   }
 }

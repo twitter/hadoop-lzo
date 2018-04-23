@@ -20,6 +20,9 @@ package com.hadoop.mapred;
 
 import java.io.IOException;
 
+import com.hadoop.compression.lzo.LzoIndex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -34,6 +37,7 @@ import org.apache.hadoop.util.LineReader;
 
 @SuppressWarnings("deprecation")
 public class DeprecatedLzoLineRecordReader implements RecordReader<LongWritable, Text> {
+  private static final Log LOG = LogFactory.getLog(DeprecatedLzoTextInputFormat.class);
   private CompressionCodecFactory codecFactory = null;
   private long start;
   private long pos;
@@ -41,9 +45,12 @@ public class DeprecatedLzoLineRecordReader implements RecordReader<LongWritable,
   private final LineReader in;
   private final FSDataInputStream fileIn;
 
-  DeprecatedLzoLineRecordReader(Configuration conf, FileSplit split) throws IOException {
+  DeprecatedLzoLineRecordReader(Configuration conf, FileSplit split) throws IOException{
+    this(conf, split,null);
+  }
+
+  DeprecatedLzoLineRecordReader(Configuration conf, FileSplit split, LzoIndex lzoIndex) throws IOException {
     start = split.getStart();
-    end = start + split.getLength();
     final Path file = split.getPath();
 
     FileSystem fs = file.getFileSystem(conf);
@@ -52,18 +59,27 @@ public class DeprecatedLzoLineRecordReader implements RecordReader<LongWritable,
     if (codec == null) {
       throw new IOException("No LZO codec found, cannot run.");
     }
+    long splitEnd = start + split.getLength();
+    long lzoBlockEnd = lzoIndex == null ? -1: lzoIndex.findNextPosition(splitEnd);
+    end = lzoBlockEnd == -1 ? splitEnd : lzoBlockEnd;
 
     // Open the file and seek to the next split.
     fileIn = fs.open(file);
     // Create input stream and read the file header.
     in = new LineReader(codec.createInputStream(fileIn), conf);
     if (start != 0) {
-      fileIn.seek(start);
-
+      fileIn.seek(lzoIndex == null ? start : lzoIndex.findNextPosition(start));
       // Read and ignore the first line.
       in.readLine(new Text());
       start = fileIn.getPos();
     }
+
+    LOG.info("codec class:" + codec.getClass().getSimpleName() +
+              ", file path:" + file.getName() +
+              ", split start:" + split.getStart() +
+              ", split end:" + splitEnd +
+              ", start:" + start +
+              ", end:" + end);
 
     pos = start;
   }
