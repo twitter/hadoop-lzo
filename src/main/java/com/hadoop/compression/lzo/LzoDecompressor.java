@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Hadoop-Gpl-Compression.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * <https://www.gnu.org/licenses/>.
  */
 
 package com.hadoop.compression.lzo;
@@ -28,7 +28,7 @@ import org.apache.hadoop.io.compress.Decompressor;
 
 /**
  * A {@link Decompressor} based on the lzo algorithm.
- * http://www.oberhumer.com/opensource/lzo/
+ * https://www.oberhumer.com/opensource/lzo/
  * 
  */
 class LzoDecompressor implements Decompressor {

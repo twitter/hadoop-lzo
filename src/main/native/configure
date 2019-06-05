@@ -11657,7 +11657,7 @@ else
 #	if defined __xlc__ || defined __GNUC__
 	 /* Catch a bug in IBM AIX xlc compiler version 6.0.0.0
 	    reported by James Lemley on 2005-10-05; see
-	    http://lists.gnu.org/archive/html/bug-coreutils/2005-10/msg00086.html
+	    https://lists.gnu.org/archive/html/bug-coreutils/2005-10/msg00086.html
 	    This test is not quite right, since xlc is allowed to
 	    reject this program, as the initializer for xlcbug is
 	    not one of the forms that C requires support for.
@@ -11674,8 +11674,8 @@ else
 	 int xlcbug = 1 / (&(digs + 5)[-2 + (bool) 1] == &digs[4] ? 1 : -1);
 #	endif
 	/* Catch a bug in an HP-UX C compiler.  See
-	   http://gcc.gnu.org/ml/gcc-patches/2003-12/msg02303.html
-	   http://lists.gnu.org/archive/html/bug-coreutils/2005-11/msg00161.html
+	   https://gcc.gnu.org/ml/gcc-patches/2003-12/msg02303.html
+	   https://lists.gnu.org/archive/html/bug-coreutils/2005-11/msg00161.html
 	 */
 	_Bool q = true;
 	_Bool *pq = &q;
@@ -13724,7 +13724,7 @@ $as_echo X"$file" |
 #
 # You should have received a copy of the GNU General Public License
 # along with GNU Libtool; see the file COPYING.  If not, a copy
-# can be downloaded from http://www.gnu.org/licenses/gpl.html, or
+# can be downloaded from https://www.gnu.org/licenses/gpl.html, or
 # obtained by writing to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 

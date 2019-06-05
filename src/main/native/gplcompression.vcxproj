@@ -15,10 +15,10 @@
  
   You should have received a copy of the GNU General Public License
   along with Hadoop-Gpl-Compression.  If not, see
-  <http://www.gnu.org/licenses/>.
+  <https://www.gnu.org/licenses/>.
 -->
 
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="https://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>

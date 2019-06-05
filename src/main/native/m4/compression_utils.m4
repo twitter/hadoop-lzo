@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Hadoop-Gpl-Compression.  If not, see
-# <http://www.gnu.org/licenses/>.
+# <https://www.gnu.org/licenses/>.
 
 # Check to see if the install program supports -C
 # If so, use "install -C" for the headers. Otherwise, every install

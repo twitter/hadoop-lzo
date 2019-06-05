@@ -5,7 +5,7 @@ Hadoop-LZO is a project to bring splittable LZO compression to Hadoop.  LZO is a
 
 ### Origins
 
-This project builds off the great work done at [http://code.google.com/p/hadoop-gpl-compression](http://code.google.com/p/hadoop-gpl-compression).  As of issue 41, the differences in this codebase are the following.
+This project builds off the great work done at [https://code.google.com/p/hadoop-gpl-compression](https://code.google.com/p/hadoop-gpl-compression).  As of issue 41, the differences in this codebase are the following.
 
 - it fixes a few bugs in hadoop-gpl-compression -- notably, it allows the decompressor to read small or uncompressable lzo files, and also fixes the compressor to follow the lzo standard when compressing small or uncompressible chunks.  it also fixes a number of inconsistently caught and thrown exception cases that can occur when the lzo writer gets killed mid-stream, plus some other smaller issues (see commit log).
 - it adds the ability to work with Hadoop streaming via the com.apache.hadoop.mapred.DeprecatedLzoTextInputFormat class
@@ -16,17 +16,17 @@ This project builds off the great work done at [http://code.google.com/p/hadoop-
 
 LZO is a wonderful compression scheme to use with Hadoop because it's incredibly fast, and (with a bit of work) it's splittable.  Gzip is decently fast, but cannot take advantage of Hadoop's natural map splits because it's impossible to start decompressing a gzip stream starting at a random offset in the file.  LZO's block format makes it possible to start decompressing at certain specific offsets of the file -- those that start new LZO block boundaries.  In addition to providing LZO decompression support, these classes provide an in-process indexer (com.hadoop.compression.lzo.LzoIndexer) and a map-reduce style indexer which will read a set of LZO files and output the offsets of LZO block boundaries that occur near the natural Hadoop block boundaries.  This enables a large LZO file to be split into multiple mappers and processed in parallel.  Because it is compressed, less data is read off disk, minimizing the number of IOPS required.  And LZO decompression is so fast that the CPU stays ahead of the disk read, so there is no performance impact from having to decompress data as it's read off disk.
 
-You can read more about Hadoop, LZO, and how we're using it at Twitter at [http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/](http://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/).
+You can read more about Hadoop, LZO, and how we're using it at Twitter at [https://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/](https://www.cloudera.com/blog/2009/11/17/hadoop-at-twitter-part-1-splittable-lzo-compression/).
 
 ### Building and Configuring
 
-To get started, see [http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ](http://code.google.com/p/hadoop-gpl-compression/wiki/FAQ).  This project is built exactly the same way; please follow the answer to "How do I configure Hadoop to use these classes?" on that page, or follow the summarized version here.
+To get started, see [https://code.google.com/p/hadoop-gpl-compression/wiki/FAQ](https://code.google.com/p/hadoop-gpl-compression/wiki/FAQ).  This project is built exactly the same way; please follow the answer to "How do I configure Hadoop to use these classes?" on that page, or follow the summarized version here.
 
 You need JDK 1.6 or higher to build hadoop-lzo (1.7 or higher on Mac OS).
 
 LZO 2.x is required, and most easily installed via the package manager on your system. If you choose to install manually for whatever reason (developer OSX machines is a common use-case) this is accomplished as follows:
 
-1. Download the latest LZO release from http://www.oberhumer.com/opensource/lzo/
+1. Download the latest LZO release from https://www.oberhumer.com/opensource/lzo/
 1. Configure LZO to build a shared library (required) and use a package-specific prefix (optional but recommended): `./configure --enable-shared --prefix /usr/local/lzo-2.06`
 1. Build and install LZO: `make && sudo make install`
 1. On Windows, you can build lzo2.dll with this command: `B\win64\vc_dll.bat`
@@ -93,11 +93,11 @@ Header files are not available in all Java installs. Double-check you are using 
 
 ### Maven repository
 
-The hadoop-lzo package is available at `http://maven.twttr.com/`.
+The hadoop-lzo package is available at `https://maven.twttr.com/`.
 
 For example, if you are using `ivy`, add the repository in `ivysettings.xml`:
 ```xml
-  <ibiblio name="twttr.com" m2compatible="true" root="http://maven.twttr.com/"/>
+  <ibiblio name="twttr.com" m2compatible="true" root="https://maven.twttr.com/"/>
 ```
 
 And include hadoop-lzo as a dependency:
