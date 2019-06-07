@@ -5,7 +5,7 @@
 // QuickLZ can be used for free under the GPL-1 or GPL-2 license
 // (where anything released into public must be open source) or under
 // a commercial license if such has been acquired (see
-// http://www.quicklz.com/order.html). The commercial license does not
+// https://www.quicklz.com/order.html). The commercial license does not
 // cover derived or ported versions created by third parties under
 // GPL.
 //

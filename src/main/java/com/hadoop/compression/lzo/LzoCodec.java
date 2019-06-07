@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Hadoop-Gpl-Compression.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * <https://www.gnu.org/licenses/>.
  */
 
 package com.hadoop.compression.lzo;
@@ -38,7 +38,7 @@ import org.apache.hadoop.io.compress.Decompressor;
 /**
  * A {@link org.apache.hadoop.io.compress.CompressionCodec} for a streaming
  * <b>lzo</b> compression/decompression pair.
- * http://www.oberhumer.com/opensource/lzo/
+ * https://www.oberhumer.com/opensource/lzo/
  *
  */
 public class LzoCodec implements Configurable, CompressionCodec {
@@ -119,7 +119,7 @@ public class LzoCodec implements Configurable, CompressionCodec {
     }
 
     /**
-     * <b>http://www.oberhumer.com/opensource/lzo/lzofaq.php</b>
+     * <b>https://www.oberhumer.com/opensource/lzo/lzofaq.php</b>
      *
      * How much can my data expand during compression ?
      * ================================================

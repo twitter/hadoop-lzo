@@ -12,7 +12,7 @@
  * details.
  * 
  * You should have received a copy of the GNU General Public License along with
- * Hadoop-Gpl-Compression. If not, see <http://www.gnu.org/licenses/>.
+ * Hadoop-Gpl-Compression. If not, see <https://www.gnu.org/licenses/>.
  */
  
 package org.apache.hadoop.io.compress;

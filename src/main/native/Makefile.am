@@ -12,7 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Hadoop-Gpl-Compression.  If not, see
-# <http://www.gnu.org/licenses/>.
+# <https://www.gnu.org/licenses/>.
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CPPFLAGS = @JNI_CPPFLAGS@ -I$(srcdir)/impl -Isrc/com/hadoop/compression/lzo

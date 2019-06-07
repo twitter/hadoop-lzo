@@ -16,7 +16,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 #
 # You should have received a copy of the GNU General Public License
 # along with Hadoop-Gpl-Compression.  If not, see
-# <http://www.gnu.org/licenses/>.
+# <https://www.gnu.org/licenses/>.
 
 Project("{EAAEC089-7163-4E57-96A1-B61BF66B3F72}") = "gplcompression", "gplcompression.vcxproj", "{A8EC1579-8E95-4C0B-A462-4C3D625CDC39}"
 EndProject

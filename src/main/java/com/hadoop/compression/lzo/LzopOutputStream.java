@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Hadoop-Gpl-Compression.  If not, see
- * <http://www.gnu.org/licenses/>.
+ * <https://www.gnu.org/licenses/>.
  */
 
 package com.hadoop.compression.lzo;
@@ -127,7 +127,7 @@ public class LzopOutputStream extends CompressorStream {
     // bug we pulled down the implementation of the superclass, which
     // is overly general. Thus this function is not quite as succint
     // as it could be, now that it's LZOP-specific.
-    // See: http://github.com/toddlipcon/hadoop-lzo/commit/5fe6dd4736a73fa33b86656ce8aeb011e7f2046c
+    // See: https://github.com/toddlipcon/hadoop-lzo/commit/5fe6dd4736a73fa33b86656ce8aeb011e7f2046c
 
     // Sanity checks
     if (compressor.finished()) {
