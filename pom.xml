@@ -401,7 +401,7 @@
           <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.9.0</version>
+            <version>1.9.15</version>
           </dependency>
           <dependency>
             <groupId>com.sun</groupId>
