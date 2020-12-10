@@ -27,19 +27,19 @@ You need JDK 1.6 or higher to build hadoop-lzo (1.7 or higher on Mac OS).
 LZO 2.x is required, and most easily installed via the package manager on your system. If you choose to install manually for whatever reason (developer OSX machines is a common use-case) this is accomplished as follows:
 
 1. Download the latest LZO release from https://www.oberhumer.com/opensource/lzo/
-1. Configure LZO to build a shared library (required) and use a package-specific prefix (optional but recommended): `./configure --enable-shared --prefix /usr/local/lzo-2.06`
+1. Configure LZO to build a shared library (required) and use a package-specific prefix (optional but recommended): `./configure --enable-shared --prefix /usr/local/lzo-2.10`
 1. Build and install LZO: `make && sudo make install`
 1. On Windows, you can build lzo2.dll with this command: `B\win64\vc_dll.bat`
 
 Now let's build hadoop-lzo.
 
-    C_INCLUDE_PATH=/usr/local/lzo-2.06/include \
-    LIBRARY_PATH=/usr/local/lzo-2.06/lib \
+    C_INCLUDE_PATH=/usr/local/lzo-2.10/include \
+    LIBRARY_PATH=/usr/local/lzo-2.10/lib \
       mvn clean package
 
 Running tests on Windows also requires setting PATH to include the location of lzo2.dll.
 
-    set PATH=C:\lzo-2.06;%PATH%
+    set PATH=C:\lzo-2.10;%PATH%
 
 Additionally on Windows, the Hadoop core code requires setting HADOOP_HOME so that the tests can find winutils.exe.  If you've built Hadoop trunk in directory C:\hdc, then the following would work.
 
@@ -60,7 +60,7 @@ because it keeps Hadoop from keeping the alteration you made to JAVA_LIBRARY_PAT
 
 The following missing LZO header error suggests LZO was installed in non-standard location and
 cannot be found at build time. Double-check the environment variable C_INCLUDE_PATH is set to the
-LZO include directory. For example: `C_INCLUDE_PATH=/usr/local/lzo-2.06/include`
+LZO include directory. For example: `C_INCLUDE_PATH=/usr/local/lzo-2.10/include`
 
     [exec] checking lzo/lzo2a.h presence... no
     [exec] checking for lzo/lzo2a.h... no
@@ -70,8 +70,8 @@ LZO include directory. For example: `C_INCLUDE_PATH=/usr/local/lzo-2.06/include`
 
 The following `Can't find library for '-llzo2'` error suggests LZO was installed to a non-standard location and cannot be located at build time. This could be one of two issues:
 
-1. LZO was not built as a shared library. Double-check the location you installed LZO contains shared libraries (probably something like `/usr/lib64/liblzo2.so.2` on Linux, or `/usr/local/lzo-2.06/lib/liblzo2.dylib` on OSX).
-1. LZO was not added to the library path. Double-check the environment varialbe LIBRARY_PATH points as the LZO lib directory (for example `LIBRARY_PATH=/usr/local/lzo-2.06/lib`).
+1. LZO was not built as a shared library. Double-check the location you installed LZO contains shared libraries (probably something like `/usr/lib64/liblzo2.so.2` on Linux, or `/usr/local/lzo-2.10/lib/liblzo2.dylib` on OSX).
+1. LZO was not added to the library path. Double-check the environment varialbe LIBRARY_PATH points as the LZO lib directory (for example `LIBRARY_PATH=/usr/local/lzo-2.10/lib`).
 
     [exec] checking lzo/lzo2a.h usability... yes
     [exec] checking lzo/lzo2a.h presence... yes
