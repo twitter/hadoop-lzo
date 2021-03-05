@@ -102,6 +102,8 @@ public class LzoCodec implements Configurable, CompressionCodec {
     } catch (IOException e) {
       LOG.error("Could not find /hadoop-lzo-build.properties resource file with revision hash");
       return "UNKNOWN";
+    } catch (NullPointerException e){
+        return "UNKNOWN";
     }
   }
 
