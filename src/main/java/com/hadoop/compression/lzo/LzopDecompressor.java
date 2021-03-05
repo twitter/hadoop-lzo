@@ -18,12 +18,19 @@
 
 package com.hadoop.compression.lzo;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.compress.DoNotPool;
+
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.zip.Checksum;
 
+//@DoNotPool
 public class LzopDecompressor extends LzoDecompressor {
+  private static final Log LOG = LogFactory.getLog(LzopDecompressor.class);
+
 
   private final EnumMap<DChecksum,Checksum> chkDMap = new EnumMap<DChecksum,Checksum>(DChecksum.class);
   private final EnumMap<CChecksum,Checksum> chkCMap = new EnumMap<CChecksum,Checksum>(CChecksum.class);
@@ -134,4 +141,11 @@ public class LzopDecompressor extends LzoDecompressor {
     }
     return ret;
   }
+
+//  @Override
+//  public synchronized void reset() {
+//    super.reset();
+//    chkDMap.clear();
+//    chkCMap.clear();
+//  }
 }
