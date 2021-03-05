@@ -133,6 +133,128 @@
         </dependency>
       </dependencies>
     </profile>
+    <profile>
+       <id>linux-multiarch</id>
+       <properties>
+          <exe.armcompiler>aarch64-linux-gnu-gcc</exe.armcompiler>
+          <exe.amdcompiler>x86_64-redhat-linux-gcc</exe.amdcompiler>
+       </properties>
+       <activation>
+          <activeByDefault>false</activeByDefault>
+       </activation>
+       <dependencies>
+          <dependency>
+             <groupId>org.apache.hadoop</groupId>
+             <artifactId>hadoop-common</artifactId>
+             <version>${hadoop.current.version}</version>
+             <scope>provided</scope>
+          </dependency>
+          <dependency>
+             <groupId>org.apache.hadoop</groupId>
+             <artifactId>hadoop-mapreduce-client-core</artifactId>
+             <version>${hadoop.current.version}</version>
+             <scope>provided</scope>
+          </dependency>
+       </dependencies>
+       <build>
+          <plugins>
+             <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                   <execution>
+                      <id>set-props-non-win</id>
+                      <phase>initialize</phase>
+                      <goals>
+                         <goal>run</goal>
+                      </goals>
+                      <configuration>
+                         <exportAntProperties>true</exportAntProperties>
+                         <target name="set-props-non-win" description="sets key properties that are used throughout" if="non-windows">
+                            <exec executable="sed" inputstring="${os.name}" outputproperty="nonspace.os">
+                               <arg value="s/ /_/g" />
+                            </exec>
+                            <property name="build.armplatform" value="${nonspace.os}-aarch64-${sun.arch.data.model}" />
+                            <property name="build.armnative" value="${project.build.directory}/native/${build.armplatform}" />
+                            <property name="build.armnative.target" value="${project.build.outputDirectory}/native/${build.armplatform}" />
+                            <property name="build.amdplatform" value="${nonspace.os}-amd64-${sun.arch.data.model}" />
+                            <property name="build.amdnative" value="${project.build.directory}/native/${build.amdplatform}" />
+                            <property name="build.amdnative.target" value="${project.build.outputDirectory}/native/${build.amdplatform}" />
+		            <property name="native.src.dir" value="${basedir}/src/main/native" />
+                            <property name="test.build.dir" value="${project.build.directory}/test-classes" />
+                            <property name="test.log.dir" value="${test.build.dir}/logs" />
+                         </target>
+                      </configuration>
+                   </execution>
+                   <execution>
+                      <id>build-native-non-win</id>
+                      <phase>compile</phase>
+                      <goals>
+                         <goal>run</goal>
+                      </goals>
+                      <configuration>
+                         <target name="build-native-non-win" if="non-windows" unless="native.uptodate" description="compiles native code">
+                            <property name="make.cmd" value="make" />
+                            <property name="build.classes" refid="maven.compile.classpath" />
+                            <mkdir dir="${build.armnative}/lib" />
+                            <mkdir dir="${build.armnative.target}/lib" />
+                            <mkdir dir="${build.armnative}/src/com/hadoop/compression/lzo" />
+                            <mkdir dir="${build.amdnative}/lib" />
+                            <mkdir dir="${build.amdnative.target}/lib" />
+                            <mkdir dir="${build.amdnative}/src/com/hadoop/compression/lzo" />
+                            <javah classpath="${build.classes}" destdir="${build.armnative}/src/com/hadoop/compression/lzo" force="yes" verbose="yes">
+                               <class name="com.hadoop.compression.lzo.LzoCompressor" />
+                               <class name="com.hadoop.compression.lzo.LzoDecompressor" />
+                            </javah>
+                            <exec dir="${build.armnative}" executable="sh" failonerror="true">
+                               <env key="CC" value="${exe.armcompiler}" />
+                               <env key="OS_NAME" value="${os.name}" />
+                               <env key="OS_ARCH" value="aarch64" />
+                               <env key="LDFLAGS" value="-Wl,--no-as-needed -lrt" />
+                               <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}" />
+                               <env key="NATIVE_SRCDIR" value="${native.src.dir}" />
+                               <arg line="${native.src.dir}/configure --host=aarch64-linux-gnu" />
+                            </exec>
+                            <exec dir="${build.armnative}" executable="${make.cmd}" failonerror="true">
+                               <env key="OS_NAME" value="${os.name}" />
+                               <env key="OS_ARCH" value="aarch64" />
+                               <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}" />
+                               <env key="HADOOP_NATIVE_SRCDIR" value="${native.src.dir}" />
+                            </exec>
+                            <exec dir="${build.armnative}" executable="sh" failonerror="true">
+                               <arg line="${build.armnative}/libtool --mode=install cp ${build.armnative}/libgplcompression.la ${build.armnative}/lib" />
+                            </exec>
+                            <exec dir="${build.amdnative}" executable="sh" failonerror="true">
+                               <env key="CC" value="${exe.amdcompiler}" />
+                               <env key="OS_NAME" value="${os.name}" />
+                               <env key="OS_ARCH" value="amd64" />
+                               <env key="LDFLAGS" value="-Wl,--no-as-needed -lrt" />
+                               <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}" />
+                               <env key="NATIVE_SRCDIR" value="${native.src.dir}" />
+                               <arg line="${native.src.dir}/configure" />
+                            </exec>
+                            <exec dir="${build.amdnative}" executable="${make.cmd}" failonerror="true">
+                               <env key="OS_NAME" value="${os.name}" />
+                               <env key="OS_ARCH" value="aarch64" />
+                               <env key="JVM_DATA_MODEL" value="${sun.arch.data.model}" />
+                               <env key="HADOOP_NATIVE_SRCDIR" value="${native.src.dir}" />
+                            </exec>
+                            <exec dir="${build.amdnative}" executable="sh" failonerror="true">
+                               <arg line="${build.amdnative}/libtool --mode=install cp ${build.amdnative}/libgplcompression.la ${build.amdnative}/lib" />
+                            </exec>
+                            <copy todir="${build.armnative.target}/lib">
+                               <fileset dir="${build.armnative}/lib" />
+                            </copy>
+                           <copy todir="${build.amdnative.target}/lib">
+                               <fileset dir="${build.amdnative}/lib" />
+                            </copy>
+                         </target>
+                      </configuration>
+                   </execution>
+                </executions>
+             </plugin>
+          </plugins>
+       </build>
+    </profile>
   </profiles>
 
   <build>

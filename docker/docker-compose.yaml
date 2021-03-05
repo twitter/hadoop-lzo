@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+
+  cross-compile-runtime-setup:
+    image: commons:cross_compile_aarch64
+    build:
+      context: .
+      dockerfile: Dockerfile 
+      args:
+        gcc_version : "4.9-2016.02"
+
+  cross-compile:
+    image: commons:cross_compile_aarch64
+    depends_on: [cross-compile-runtime-setup]
+    volumes:
+      - ~/.ssh:/root/.ssh:delegated
+      - ~/.gnupg:/root/.gnupg:delegated
+      - ..:/code:delegated
+      - ~/.m2:/root/.m2:delegated
+    # Since we are cross compiling hadoop-lzo which cannot be loaded on x86_64, we add `skipTests` here to skip the test.
+    command: /bin/bash -cl "mvn clean install -e -Plinux-multiarch -DskipTests"
+    working_dir: /code
