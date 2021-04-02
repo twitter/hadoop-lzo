@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.LineReader;
 
+import com.google.common.base.Charsets;
 import com.hadoop.compression.lzo.util.CompatibilityUtil;
 
 /**
@@ -41,6 +42,18 @@ import com.hadoop.compression.lzo.util.CompatibilityUtil;
  * and value as line.
  */
 public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
+
+	protected static final boolean supportsCustomDelimiters;
+	static {
+		boolean hasConstructor = false;
+		try{
+			RecordReader.class.getConstructor(java.io.InputStream.class, org.apache.hadoop.conf.Configuration.class, byte[].class);
+			hasConstructor = true;
+		} catch (NoSuchMethodException e) {
+		} catch (SecurityException e) {
+		}
+		supportsCustomDelimiters = hasConstructor;
+	}
 
   private long start;
   private long pos;
@@ -102,8 +115,23 @@ public class LzoLineRecordReader extends RecordReader<LongWritable, Text> {
     // open the file and seek to the start of the split
     fileIn = fs.open(split.getPath());
 
+    // load the custom line delimiter if one is set
+    final String delimiter = job.get("textinputformat.record.delimiter");
+    byte[] recordDelimiterBytes = null;
+    if (null != delimiter) {
+      recordDelimiterBytes = delimiter.getBytes(Charsets.UTF_8);
+    }
+
     // creates input stream and also reads the file header
-    in = new LineReader(codec.createInputStream(fileIn), job);
+    if(supportsCustomDelimiters && recordDelimiterBytes != null) {
+      in = new LineReader(codec.createInputStream(fileIn), job, recordDelimiterBytes);
+    } else if(!supportsCustomDelimiters && recordDelimiterBytes != null) {
+      // TODO: log.warn("Cannot use customDelimiter " + delimiter + " for LZO files because your Hadoop installation doesn't support the LineReader(InputStream, Configuration, byte[]) constructor.  Consider updating to a distribution of Hadoop that includes the patch in HADOOP-7096");
+      // https://issues.apache.org/jira/browse/HADOOP-7096
+      in = new LineReader(codec.createInputStream(fileIn), job);
+    } else { // recordDelimiterBytes == null
+      in = new LineReader(codec.createInputStream(fileIn), job);
+    }
 
     if (start != 0) {
       fileIn.seek(start);
