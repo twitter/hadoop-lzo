@@ -20,10 +20,10 @@ package com.hadoop.mapreduce;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -53,7 +53,7 @@ import com.hadoop.compression.lzo.util.CompatibilityUtil;
  * behavior of this input format.
  */
 public class LzoTextInputFormat extends TextInputFormat {
-  private final Map<Path, LzoIndex> indexes = new HashMap<Path, LzoIndex>();
+  private final Map<Path, LzoIndex> indexes = new ConcurrentHashMap<Path, LzoIndex>();
 
   @Override
   protected List<FileStatus> listStatus(JobContext job) throws IOException {
