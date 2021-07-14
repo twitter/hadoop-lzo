@@ -154,9 +154,43 @@ public class DeprecatedLzoTextInputFormat extends TextInputFormat {
     if (LzoInputFormatCommon.isLzoFile(fileSplit.getPath().toString())) {
       reporter.setStatus(split.toString());
       return new DeprecatedLzoLineRecordReader(conf, (FileSplit)split);
+    } else if (LzoInputFormatCommon.isLzoIndexFile(fileSplit.getPath().toString())) {
+      return new DummyRecordReader();
     } else {
       // delegate non-LZO files to the TextInputFormat base class.
       return super.getRecordReader(split, conf, reporter);
     }
   }
+
+  public static class DummyRecordReader implements RecordReader<LongWritable, Text> {
+
+    @Override
+    public float getProgress() throws IOException {
+      return 0;
+    }
+
+    @Override
+    public boolean next(LongWritable s, Text aLong) throws IOException {
+      return false;
+    }
+
+    @Override
+    public LongWritable createKey() {
+      return null;
+    }
+
+    @Override
+    public Text createValue() {
+      return null;
+    }
+
+    @Override
+    public long getPos() throws IOException {
+      return 0;
+    }
+
+    @Override
+    public void close() throws IOException {}
+  }
+
 }
