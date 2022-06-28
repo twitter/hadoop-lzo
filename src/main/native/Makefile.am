@@ -18,7 +18,7 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = @JNI_CPPFLAGS@ -I$(srcdir)/impl -Isrc/com/hadoop/compression/lzo
 AM_LDFLAGS = @JNI_LDFLAGS@
 AM_CFLAGS = -g -Wall -fPIC -O2
-ifneq ($(OS_ARCH),aarch64)
+ifeq ($(filter aarch64 loongarch64, $(OS_ARCH)),)
   AM_CFLAGS += -m$(JVM_DATA_MODEL)
 endif
 
