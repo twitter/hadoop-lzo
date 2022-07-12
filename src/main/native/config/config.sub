@@ -139,7 +139,7 @@ case $os in
 	-sun*os*)
 		# Prevent following clause from handling this invalid input.
 		;;
-	-dec* | -mips* | -sequent* | -encore* | -pc532* | -sgi* | -sony* | \
+	-dec* | -mips* | -loongarch* | -sequent* | -encore* | -pc532* | -sgi* | -sony* | \
 	-att* | -7300* | -3300* | -delta* | -motorola* | -sun[234]* | \
 	-unicom* | -ibm* | -next | -hp | -isi* | -apollo | -altos* | \
 	-convergent* | -ncr* | -news | -32* | -3600* | -3100* | -hitachi* |\
@@ -241,6 +241,7 @@ case $basic_machine in
 	| mips | mipsbe | mipseb | mipsel | mipsle \
 	| mips16 \
 	| mips64 | mips64el \
+	| loongarch64 \
 	| mips64vr | mips64vrel \
 	| mips64orion | mips64orionel \
 	| mips64vr4100 | mips64vr4100el \
@@ -313,6 +314,7 @@ case $basic_machine in
 	| m88110-* | m88k-* | maxq-* | mcore-* \
 	| mips-* | mipsbe-* | mipseb-* | mipsel-* | mipsle-* \
 	| mips16-* \
+	| loongarch64-* \
 	| mips64-* | mips64el-* \
 	| mips64vr-* | mips64vrel-* \
 	| mips64orion-* | mips64orionel-* \
@@ -1368,6 +1370,9 @@ case $basic_machine in
 		os=-aout
 		;;
 	mips*-cisco)
+		os=-elf
+		;;
+	loongarch*-*)
 		os=-elf
 		;;
 	mips*-*)
